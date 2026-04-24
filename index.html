@@ -154,9 +154,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async></script>
-<!-- Google API client -->
-<script src="https://apis.google.com/js/api.js"></script>
-
 <script>
 // ── CONFIG ── Replace CLIENT_ID with your OAuth 2.0 Client ID from Google Cloud Console
 const CLIENT_ID = '406228714733-s5jaq0bp4nl7uujdc35j51l8nj0cgagt.apps.googleusercontent.com';
@@ -373,43 +370,59 @@ function setSyncState(state,label){
   lbl.textContent=label||'';
 }
 
-// ── DRIVE API ──
-function initGapi(){
-  return new Promise(resolve=>{
-    gapi.load('client',async()=>{
-      await gapi.client.init({});
-      await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
-      resolve();
-    });
-  });
+// ── DRIVE REST API (pure fetch, no gapi.client) ──
+const DRIVE='https://www.googleapis.com/drive/v3';
+const UPLOAD='https://www.googleapis.com/upload/drive/v3';
+
+function authHeaders(){
+  return {Authorization:'Bearer '+accessToken,'Content-Type':'application/json'};
+}
+
+async function driveGet(path,params={}){
+  const url=new URL(DRIVE+path);
+  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+  const r=await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
+  if(!r.ok)throw new Error('Drive GET '+path+' failed: '+r.status);
+  return r;
 }
 
 async function findOrCreateFile(){
-  const res=await gapi.client.drive.files.list({
+  const r=await driveGet('/files',{
     q:`name='${FILE_NAME}' and '${FOLDER_ID}' in parents and trashed=false`,
-    fields:'files(id,name,modifiedTime,fileSize)',
+    fields:'files(id,name,modifiedTime)',
     orderBy:'modifiedTime desc',
     spaces:'drive'
   });
-  const files=res.result.files||[];
+  const json=await r.json();
+  const files=json.files||[];
   if(files.length>0){
-    // Pick newest (already sorted desc). If dupes exist, delete the older ones.
     driveFileId=files[0].id;
-    if(files.length>1){
-      for(let i=1;i<files.length;i++){
-        try{await gapi.client.drive.files.delete({fileId:files[i].id});}catch(e){}
-      }
+    // Delete any dupes
+    for(let i=1;i<files.length;i++){
+      try{await fetch(DRIVE+'/files/'+files[i].id,{method:'DELETE',headers:{Authorization:'Bearer '+accessToken}});}catch(e){}
     }
     return driveFileId;
   }
-  // Create new empty file
-  const created=await gapi.client.request({
-    path:'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+  // Create new file with empty JSON content
+  const boundary='slk_boundary_'+Date.now();
+  const meta=JSON.stringify({name:FILE_NAME,parents:[FOLDER_ID]});
+  const body=`--${boundary}
+Content-Type: application/json; charset=UTF-8
+
+${meta}
+--${boundary}
+Content-Type: application/json
+
+{}
+--${boundary}--`;
+  const cr=await fetch(UPLOAD+'/files?uploadType=multipart',{
     method:'POST',
-    headers:{'Content-Type':'multipart/related; boundary=BOUNDARY'},
-    body:`--BOUNDARY\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name:FILE_NAME,parents:[FOLDER_ID]})}\r\n--BOUNDARY\r\nContent-Type: application/json\r\n\r\n{}\r\n--BOUNDARY--`
+    headers:{Authorization:'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},
+    body
   });
-  driveFileId=created.result.id;
+  if(!cr.ok)throw new Error('Create file failed: '+cr.status);
+  const created=await cr.json();
+  driveFileId=created.id;
   return driveFileId;
 }
 
@@ -417,21 +430,25 @@ async function loadFromDrive(){
   setSyncState('syncing','Loading…');
   try{
     await findOrCreateFile();
-    const res=await gapi.client.drive.files.get({fileId:driveFileId,alt:'media'});
-    const body=(res.body||'').trim();
-    if(body&&body!=='{}'){
+    // Fetch file content as text directly
+    const r=await fetch(DRIVE+'/files/'+driveFileId+'?alt=media',{
+      headers:{Authorization:'Bearer '+accessToken}
+    });
+    if(!r.ok)throw new Error('Read failed: '+r.status);
+    const text=(await r.text()).trim();
+    if(text&&text!=='{}'){
       let parsed;
       try{
-        parsed=JSON.parse(body);
+        parsed=JSON.parse(text);
       }catch(e){
+        // File may be base64-encoded from a previous broken upload — decode it
         try{
-          const decoded=atob(body);
-          parsed=JSON.parse(decoded);
-          // Re-save immediately as clean JSON so this only happens once
+          parsed=JSON.parse(atob(text));
+          // Immediately re-save as clean JSON so this only triggers once
           data=parsed;
           await saveToDrive();
         }catch(e2){
-          console.error('Could not parse Drive content:',e2);
+          console.error('Could not parse file content:',e2);
           parsed={};
         }
       }
@@ -444,7 +461,7 @@ async function loadFromDrive(){
     showApp();
   }catch(e){
     console.error('Drive load error',e);
-    setSyncState('error','Load failed');
+    setSyncState('error','Load failed: '+e.message);
     data={};
     render();
     showApp();
@@ -455,12 +472,12 @@ async function saveToDrive(){
   if(!driveFileId)return;
   setSyncState('syncing','Saving…');
   try{
-    await gapi.client.request({
-      path:`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
+    const r=await fetch(UPLOAD+'/files/'+driveFileId+'?uploadType=media',{
       method:'PATCH',
-      headers:{'Content-Type':'application/json'},
+      headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
       body:JSON.stringify(data)
     });
+    if(!r.ok)throw new Error('Save failed: '+r.status);
     setSyncState('saved','Saved ✓');
     setTimeout(()=>setSyncState('saved','Synced'),1500);
   }catch(e){
@@ -486,7 +503,6 @@ function initAuth(){
         return;
       }
       accessToken=resp.access_token;
-      gapi.client.setToken({access_token:accessToken});
       await loadFromDrive();
     }
   });
@@ -498,7 +514,7 @@ document.getElementById('signInBtn').addEventListener('click',()=>{
     document.getElementById('authError').style.display='block';
     return;
   }
-  tokenClient.requestAccessToken({prompt:'consent'});
+  tokenClient.requestAccessToken({prompt:'select_account'});
 });
 
 document.getElementById('signOutBtn').addEventListener('click',()=>{
@@ -513,16 +529,13 @@ function showApp(){
   document.getElementById('app').style.display='block';
 }
 
-// Wait for both gapi and gsi to load
-window.addEventListener('load',async()=>{
-  await initGapi();
-  // Poll for google.accounts to be ready (loaded async)
+// Wait for Google Identity Services to load (no gapi needed)
+window.addEventListener('load',()=>{
   const waitGsi=()=>new Promise(resolve=>{
     if(window.google&&google.accounts)return resolve();
     const t=setInterval(()=>{if(window.google&&google.accounts){clearInterval(t);resolve();}},100);
   });
-  await waitGsi();
-  initAuth();
+  waitGsi().then(initAuth);
 });
 
 // ── CARD LOGIC ──
