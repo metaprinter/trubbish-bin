@@ -64,7 +64,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .set-sub{font-size:11px;color:var(--muted);font-weight:400;letter-spacing:.5px;text-transform:uppercase}
 .set-progress{margin-left:auto;display:flex;align-items:center;gap:10px}
 .progress-track{width:90px;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden}
-.progress-fill{height:100%;background:var(--red);border-radius:2px;transition:width .4s ease}
+.progress-fill{height:100%;background:#27e899;border-radius:2px;transition:width .4s ease}
 .progress-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;min-width:52px;text-align:right}
 .card-grid{display:flex;flex-wrap:wrap;gap:10px}
 .card{width:var(--card-w);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .15s;position:relative}
@@ -99,6 +99,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pill.on{background:var(--red);border-color:var(--red);color:#fff}
 .remove-btn{display:flex;align-items:center;gap:4px;margin-top:8px;font-size:10px;font-weight:500;color:var(--muted);cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-family:'DM Sans',sans-serif;transition:all .15s;width:100%;justify-content:center}
 .remove-btn:hover{color:var(--red);border-color:var(--red);background:var(--red-dim)}
+.set-group.excluded .card-grid{filter:grayscale(1);opacity:0.35;pointer-events:none}
+.set-group.excluded .card{cursor:default}
+.st-toggle{font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:.5px;transition:all .15s;white-space:nowrap;margin-left:10px}
+.st-toggle:hover{color:var(--text);border-color:var(--text)}
+.st-toggle.included{background:rgba(39,232,153,.12);border-color:#27e899;color:#27e899}
 .empty{padding:60px 0;text-align:center;color:var(--muted);font-size:14px}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--gold);border-radius:8px;padding:11px 18px;font-size:13px;color:var(--gold);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:999}
 .toast.show{opacity:1;transform:none}
@@ -360,6 +365,7 @@ const SETS=[STARTERS,...OP_SETS];
 
 // ── STATE ──
 let data={}, curTab='all', curSearch='';
+let stExcluded=localStorage.getItem('slk-st-excluded')!=='false'; // default excluded
 let driveFileId=null, saveTimer=null, tokenClient=null, accessToken=null;
 
 // ── SYNC UI ──
@@ -641,7 +647,12 @@ function filtered(cards){
 function render(){
   const main=document.getElementById('main');
   let tAll=0,tOwned=0,html='',any=false;
-  for(const grp of SETS){
+
+  // Render booster sets first (all non-STARTERS), starters always last
+  const boosterSets=SETS.filter(g=>g.key!=='STARTERS');
+  const starterSet=SETS.find(g=>g.key==='STARTERS');
+
+  for(const grp of boosterSets){
     const cards=filtered(grp.cards);
     if(!cards.length)continue;
     any=true;
@@ -656,9 +667,46 @@ function render(){
 <div class="card-grid">${cards.map(cardHTML).join('')}</div>
 </div>`;
   }
+
+  // Starter Decks — always rendered last, toggle in set header
+  if(starterSet){
+    const stCards=filtered(starterSet.cards);
+    // Count starters in totals only when included
+    if(!stExcluded){
+      tAll+=starterSet.cards.length;
+      tOwned+=starterSet.cards.filter(c=>data[c.id]).length;
+    }
+    // Show starter section if: tab is 'all' or 'missing' (always show), or 'owned' and has owned
+    const showSt=curTab!=='owned'||(stCards.filter(c=>data[c.id]).length>0);
+    if(showSt||(curSearch&&stCards.length>0)){
+      any=true;
+      const stOwned=stCards.filter(c=>data[c.id]).length;
+      const stPct=stCards.length?Math.round(stOwned/stCards.length*100):0;
+      const toggleLabel=stExcluded?'Include':'Exclude';
+      const toggleClass=stExcluded?'st-toggle':'st-toggle included';
+      html+=`<div class="set-group${stExcluded?' excluded':''}">
+<div class="set-header">
+  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0">
+    <div><div class="set-title">${starterSet.title}</div><div class="set-sub">ST-01 through ST-29 · Leaders</div></div>
+    <button class="${toggleClass}" onclick="toggleStarters()">${toggleLabel}</button>
+  </div>
+  <div class="set-progress"><div class="progress-track"><div class="progress-fill" style="width:${stPct}%"></div></div><div class="progress-pct">${stOwned}/${stCards.length}</div></div>
+</div>
+<div class="card-grid">${stCards.map(cardHTML).join('')}</div>
+</div>`;
+    }
+  }
+
   if(!any)html='<div class="empty">No leaders match.</div>';
   main.innerHTML=html;
-  document.getElementById('stat').innerHTML=`<strong>${tOwned}</strong> / ${tAll} owned`;
+  const overallPct=tAll?Math.round(tOwned/tAll*100):0;
+  document.getElementById('stat').innerHTML=`<strong>${tOwned}</strong> / ${tAll} owned · ${overallPct}%`;
+}
+
+function toggleStarters(){
+  stExcluded=!stExcluded;
+  localStorage.setItem('slk-st-excluded',String(stExcluded));
+  render();
 }
 
 document.getElementById('search').addEventListener('input',e=>{curSearch=e.target.value.toLowerCase().trim();render();});
