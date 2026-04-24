@@ -418,8 +418,24 @@ async function loadFromDrive(){
   try{
     await findOrCreateFile();
     const res=await gapi.client.drive.files.get({fileId:driveFileId,alt:'media'});
-    if(res.body&&res.body.trim()&&res.body.trim()!=='{}'){
-      data=JSON.parse(res.body);
+    const body=(res.body||'').trim();
+    if(body&&body!=='{}'){
+      let parsed;
+      try{
+        parsed=JSON.parse(body);
+      }catch(e){
+        try{
+          const decoded=atob(body);
+          parsed=JSON.parse(decoded);
+          // Re-save immediately as clean JSON so this only happens once
+          data=parsed;
+          await saveToDrive();
+        }catch(e2){
+          console.error('Could not parse Drive content:',e2);
+          parsed={};
+        }
+      }
+      data=parsed||{};
     }else{
       data={};
     }
