@@ -472,17 +472,33 @@ async function saveToDrive(){
   if(!driveFileId)return;
   setSyncState('syncing','Saving…');
   try{
+    await ensureFreshToken();
     const r=await fetch(UPLOAD+'/files/'+driveFileId+'?uploadType=media',{
       method:'PATCH',
       headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
       body:JSON.stringify(data)
     });
+    if(r.status===401||r.status===403){
+      // Token truly expired and silent refresh didn't work — prompt user
+      setSyncState('error','Session expired');
+      document.getElementById('syncLabel').style.cursor='pointer';
+      document.getElementById('syncLabel').title='Click to re-authenticate';
+      document.getElementById('syncLabel').onclick=()=>tokenClient.requestAccessToken({prompt:''});
+      return;
+    }
     if(!r.ok)throw new Error('Save failed: '+r.status);
+    document.getElementById('syncLabel').style.cursor='';
+    document.getElementById('syncLabel').onclick=null;
     setSyncState('saved','Saved ✓');
     setTimeout(()=>setSyncState('saved','Synced'),1500);
   }catch(e){
     console.error('Drive save error',e);
-    setSyncState('error','Save failed');
+    setSyncState('error','Save failed — click to retry');
+    document.getElementById('syncLabel').style.cursor='pointer';
+    document.getElementById('syncLabel').onclick=()=>{
+      document.getElementById('syncLabel').onclick=null;
+      saveToDrive();
+    };
   }
 }
 
@@ -492,6 +508,31 @@ function scheduleSave(){
 }
 
 // ── AUTH ──
+let tokenExpiry=0; // unix ms when token expires
+
+function refreshToken(){
+  return new Promise((resolve,reject)=>{
+    tokenClient.callback=async(resp)=>{
+      if(resp.error){reject(new Error(resp.error));return;}
+      accessToken=resp.access_token;
+      tokenExpiry=Date.now()+(resp.expires_in||3500)*1000;
+      resolve();
+    };
+    tokenClient.requestAccessToken({prompt:''});
+  });
+}
+
+async function ensureFreshToken(){
+  // Refresh if token expires in less than 2 minutes
+  if(!accessToken||Date.now()>tokenExpiry-120000){
+    try{await refreshToken();}
+    catch(e){
+      // Refresh failed silently (popup blocked etc) — will surface as save error
+      console.warn('Token refresh failed:',e);
+    }
+  }
+}
+
 function initAuth(){
   tokenClient=google.accounts.oauth2.initTokenClient({
     client_id:CLIENT_ID,
@@ -503,6 +544,7 @@ function initAuth(){
         return;
       }
       accessToken=resp.access_token;
+      tokenExpiry=Date.now()+(resp.expires_in||3500)*1000;
       await loadFromDrive();
     }
   });
