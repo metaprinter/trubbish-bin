@@ -101,8 +101,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .remove-btn:hover{color:var(--red);border-color:var(--red);background:var(--red-dim)}
 .set-group.excluded .card-grid{filter:grayscale(1);opacity:0.35;pointer-events:none}
 .set-group.excluded .card{cursor:default}
-.st-toggle{font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:.5px;transition:all .15s;white-space:nowrap;margin-left:10px}
-.st-toggle:hover{color:var(--text);border-color:var(--text)}
+.st-toggle{font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:.5px;transition:all .15s;white-space:nowrap;margin-left:10px}
+.st-toggle.excluded{background:var(--red-dim);border-color:var(--red);color:var(--red)}
 .st-toggle.included{background:rgba(39,232,153,.12);border-color:#27e899;color:#27e899}
 .empty{padding:60px 0;text-align:center;color:var(--muted);font-size:14px}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--gold);border-radius:8px;padding:11px 18px;font-size:13px;color:var(--gold);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:999}
@@ -176,6 +176,7 @@ function stripeStyle(c){
 }
 const IMG='https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece';
 function stImg(id){const m=id.match(/^([A-Z]+)(\d+)-(\d+)$/);if(!m)return'';const[,p,n]=m;return`${IMG}/${p}${n.padStart(2,'0')}/${id}_EN.webp`;}
+function cardImg(c){if(c.img)return c.img;return stImg(c.id);}
 
 const STARTERS={key:'STARTERS',title:'Starter Decks',sub:'ST-01 through ST-29',cards:[
   {id:'ST01-001',nm:'Monkey D. Luffy',c:'Red',set:'ST-01'},
@@ -216,131 +217,131 @@ const STARTERS={key:'STARTERS',title:'Starter Decks',sub:'ST-01 through ST-29',c
 // Booster set leaders from verified Google Sheets data
 const OP_SETS=[
   {key:'OP01',title:'Romance Dawn',sub:'OP-01',cards:[
-    {id:'OP01-001',nm:'Roronoa Zoro',c:'Red',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXr7Oc-29EkdXqIUv5NZHCsVFY8LCHB9HNOMrqMsSprGmMWKoywe16txJ-6Gxr_qmIXUwQZML9JiifE8QkuHpVZEfI0LTYqfWL01HZ-u7L16z0avgz9GKjDQqgXvRTvnM_BWN6q4Tew3UI5nDk=s161-w117-h161'},
-    {id:'OP01-002',nm:'Trafalgar Law',c:['Red','Green'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWkk_dwQGRABPjWAimMZfXl0KWHj-lAY1wFpWG8Zzf8j0D4eaLpTzfVvVKupaB1nneHhQpdidUrUL2MjwH3FZOY8HSVpovOZxhYgTegcK1kE7SfeAzbcYjRQRWsHLNDR-9Q22YwlJQcTvYnxw=s161-w117-h161'},
-    {id:'OP01-003',nm:'Monkey.D.Luffy',c:['Red','Green'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUNBJFsmOhvgzoKTsJ30p__S6vm5ZwiivxRPVIVGoBCr_3Lg9NrW4SEI8py3VXOi828yg75VC--sbZJYB7ZrEZ5Hn6Uf9yBrSBxWbGJYnT5xoy2lrOWxpOmNdC_mJdGor5xA-LHOKPj8zWLpvI=s161-w117-h161'},
-    {id:'OP01-031',nm:'Kozuki Oden',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXGW0eYnhYK6p6PoW8HSE99Y2LBjCP_N9YKUppItzmuBMMU-LVpLN9WJUSNqjH0SjdNUkNxGy-OOWUswwCiqV6800lSWhu8MjBixSqN1rOdcGbWwOhM8-GD6viHR3o49ZGAljYqwAjGBlHFTA=s161-w117-h161'},
-    {id:'OP01-060',nm:'Donquixote Doflamingo',c:'Blue',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXKP692FH7KKDtrlp3tkhc6qymkQWTzhYQiq3ISN7KNPq5YgCRRJ1PfSfjKM5FSclNtirF5qzQiS7HL5AUv0OLk19gQ_wBGDeuX9xjo3tB6Bi19WoXYQV3dNI_RPJuI5feNzma1BZn3JV8V2GU=s161-w117-h161'},
-    {id:'OP01-061',nm:'Kaido',c:['Blue','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVR_EacHgYgO_YM6Jb9AKSNKi30bCFvvlsQ6Gc-weW9g4iDv18XdVK940Bbo6CTNU--IlTvJyRJJ4jicup6bOwBW9JBrdfrjU5Tly6oATDUXBQfCT1GKUZ2te7okvFMiG2w8R_UfnjHhop6X20=s161-w117-h161'},
-    {id:'OP01-062',nm:'Crocodile',c:['Blue','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xX67NPpacshO6fQ7vUcBG0YdiuGp5fIUVhhtteB4C80s_pnnPSIJ0kpaM6rB5MVWETqhuA9OiefIGLPzl_OW4teIEQWMHHNG1_5vsbgkp-nwB2DoHJZqqPZ9AqHE6pYen34k1nkU9aAj_nk_A=s161-w117-h161'},
-    {id:'OP01-091',nm:'King',c:'Purple',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUSnh-6EEsitw4YbCYTGmShfMfD2GAHSKNsvZVuWPMXpVfvn9zi1Z92MgXkGA7oyxEvSnClDv2MH7PN1KN-ytlxk_Io_-TAW9r83FNSN2pr3xaWuwql1YbmE_nTSSLDP31RSqqE8ZEo8CMLOig=s161-w117-h161'},
+    {id:'OP01-001',nm:'Roronoa Zoro',c:'Red',img:''},
+    {id:'OP01-002',nm:'Trafalgar Law',c:['Red','Green'],img:''},
+    {id:'OP01-003',nm:'Monkey.D.Luffy',c:['Red','Green'],img:''},
+    {id:'OP01-031',nm:'Kozuki Oden',c:'Green',img:''},
+    {id:'OP01-060',nm:'Donquixote Doflamingo',c:'Blue',img:''},
+    {id:'OP01-061',nm:'Kaido',c:['Blue','Purple'],img:''},
+    {id:'OP01-062',nm:'Crocodile',c:['Blue','Purple'],img:''},
+    {id:'OP01-091',nm:'King',c:'Purple',img:''},
   ]},
   {key:'OP02',title:'Paramount War',sub:'OP-02',cards:[
-    {id:'OP02-001',nm:'Edward.Newgate',c:'Red',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xU3qlZORPBlly4pli7mYdgRA93WFEBuK9hoqsoiYQHRr8jdGOVccDSsiRMDr6nWq8etMjSjSkGcf9vYpjezxnPNcwFKkix7UGffNJNYPzHnr999oVZy656wTDeWaUImbiWzSxGJCC0py6GvPg=s161-w117-h161'},
-    {id:'OP02-002',nm:'Monkey.D.Garp',c:['Red','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xX1ls3ZMCDjCM93YMgIH1y06MOIioq4Shul2c1ndpuFuzfC9_Jkjw7upWgalzePnXY4kZCVoQoBKeMPg-LtbVPgxGRh7eF3aNl0Nf-9gx83jMjDyuD1YBtF0FU7_WH0FLjqwokRbFbfxkOO=s161-w117-h161'},
-    {id:'OP02-025',nm:'Kin\'emon',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV44qWrSCaUvv9zUo6fu2zbOFUt5Dz8K7TI07uX96UW-QMlaTDllE49qo9ZgeTxeyCIIh7r67KUWY39_Q1yDc_WjqNKkFjh2heZSgpAeVWpIhsL3XPQx0D3L2Rtwby7CpMXtMlScEdTL01mbA=s161-w117-h161'},
-    {id:'OP02-026',nm:'Sanji',c:['Green','Blue'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXaB4dRkQeB7MhpXt7Nsb_SEApDhw0iK3mFU1Oy5fseOembSMgnNqkCOaxPngc_8Z6xdRum4BVlhag-xpB-derdjdDkBHEX5E9F2ntDtColGd2DWvEUO-GRKzUFKXP-Ai158kaGYnBv2Ny9tVI=s161-w117-h161'},
-    {id:'OP02-049',nm:'Emporio.Ivankov',c:'Blue',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVq4VYNp8hyIPKR1jpDZS3VR6hbM9JbaABOFDlHwZ2hKEo-nigVM32CK6H3G9ZpuxPqOmLbYEapIJb4RWKJEufUCao86gRqFliSeFE_C89ul7cZuenISu4dgrs_sdsx9tRWM26gMXz5l8mq8A=s161-w117-h161'},
-    {id:'OP02-071',nm:'Magellan',c:'Purple',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xW4OvkpNb0pXeBCizq1YaU7VKdrwcAGxTt5IMSIkhdm_vsvqIpU31ajc0wZJxYLW-gYwLQYYWmSVwsmaPRtU7V0m5c8QC9qdyIQ36LQa7K0dJ-6Zp1ZFDv35hav5IIuJY-ZU61Y58RvNhFJHw4=s161-w117-h161'},
-    {id:'OP02-072',nm:'Zephyr',c:['Purple','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVWL8uTX-chIcejxK4y46777XBpVNj10xO9Y-jfzUy3Imh1_I7Tg2pBo5XnE8XU7oKdd-DPgcMKPJrd8eRweVibxmNlskovlFZwiMEuj3_1Yi8id2eWxFpxnjX82_col8ryzVspjJjVtJhV_dA=s161-w117-h161'},
-    {id:'OP02-093',nm:'Smoker',c:'Black',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV5A-zdq7kDBLT5YyLvjPCQ_XPHbTkhlRssRkiKSxTva9KFMFdgacu0Pbsed0s0EmTODduWzviFnVewkfTR8D4Umus4-wjpXbVg4EPOAaqo2g3zQjfD7fxdAAqfVSXONvg6c5m_wJLaAIjpGgI=s161-w117-h161'},
+    {id:'OP02-001',nm:'Edward.Newgate',c:'Red',img:''},
+    {id:'OP02-002',nm:'Monkey.D.Garp',c:['Red','Black'],img:''},
+    {id:'OP02-025',nm:'Kin\'emon',c:'Green',img:''},
+    {id:'OP02-026',nm:'Sanji',c:['Green','Blue'],img:''},
+    {id:'OP02-049',nm:'Emporio.Ivankov',c:'Blue',img:''},
+    {id:'OP02-071',nm:'Magellan',c:'Purple',img:''},
+    {id:'OP02-072',nm:'Zephyr',c:['Purple','Black'],img:''},
+    {id:'OP02-093',nm:'Smoker',c:'Black',img:''},
   ]},
   {key:'OP03',title:'Pillars of Strength',sub:'OP-03',cards:[
-    {id:'OP03-001',nm:'Portgas.D.Ace',c:'Red',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xW_iyBolhWFx2rVLfvadF1bl_AYzdKJkmcnJ3uu5lOg0p7WypZwfZiph5ENBockbyS2tZ0HYjZjteqlrRDjQBnUsj7acpmNx9vT8Z1vDeig01UHSVNDq0RIciyBe5FapmlkgELEUKKNNRtKKA=s161-w117-h161'},
-    {id:'OP03-021',nm:'Kuro',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV3wHYbJAH3FXJrMUyTzBob7LcmqXXnw15rDw6KVRF_1obuaoLLKsIXnaxJfabUJPrFugrCXZ0IxLpNSzMeK7TK44K-_lBhKY_21ZJWbZWyFIlAaVoN2RB-YaMTWDSXVldBxnxgtOVXoB0LjxA=s161-w117-h161'},
-    {id:'OP03-022',nm:'Arlong',c:['Green','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWiBjfHqFjiCEZsEXbSb3KqzA1ct2hI2Aaoavm086IGUvlyr_TAF08HOcL_PhUno0URYkcdkyZPDhuEcjGYTzcq8vvK-LdJws1BjzAzInJBlV7mEuFG5jfGdOylk-X7FPvCrydjmgEZnvLA4Ek=s161-w117-h161'},
-    {id:'OP03-040',nm:'Nami',c:'Blue',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV-tT6V6eL4q2f7kViV-dSpP8byuFa2FcOcErNT_xeY5-QxTvsoe8LLs0PEztEYXRVgQdaSXfocp1xOsPyTS_SE0JzDkv0sItmdzybSvY9X7pyWFjXTdPvLr8x1QaALll9HS5CvyGo3cMKsw2Q=s161-w117-h161'},
-    {id:'OP03-058',nm:'Iceburg',c:'Purple',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVRQgt_oEY4qwt7__15C8Bega9Mn6ut8dKCCb_30DeQvTin-pEG82SwBrqtNc8wEHscRN0RhPnjnvMda4au566-GCgNombbRDOVawpcR2LbzqpLE1WLYImhnHmpr6wGoGQ6i8HlKd2f9QFsRvA=s161-w117-h161'},
-    {id:'OP03-076',nm:'Rob Lucci',c:'Black',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVj82__MaghlVx86JXUacaWiS5mZM76aTH1zZyZh07p7MITLQ-1ZqpDIP-Ay_ph-t01dpfvHFqToFAwgl0NUzEPtPRFWIlJ4pUiKleOOCibW1ASCLM735_ZKYPFEm2557Jigccfr6kxq7nalQY=s161-w117-h161'},
-    {id:'OP03-077',nm:'Charlotte Linlin',c:'Black',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVs--kRv0YzxDyV_6HY1Ip4eT8oYO-z4oqMTZcTSzypBmbQ07uPmeirnP-f96mca9SFanLSH09JplEX379F950mujjjxYjKy1Klpe6OpwJhNcut9NEit4DkL5aWyV28NtIbaycHE-k6IHljDg=s161-w117-h161'},
-    {id:'OP03-099',nm:'Charlotte Katakuri',c:'Yellow',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWjrWW9LbqCZZRnLUkkyEYj7ldijfsBQ-Xf6E4JaAn61ymjAks5UwJ54-SyPHAjkDqNDdFuHxS0RdpMTm_nMQzJsJmSITHA-zRHkrGLsfIKeLAjTU88oCIma12xa59J4picSqTTg_94Apj5yg=s161-w117-h161'},
+    {id:'OP03-001',nm:'Portgas.D.Ace',c:'Red',img:''},
+    {id:'OP03-021',nm:'Kuro',c:'Green',img:''},
+    {id:'OP03-022',nm:'Arlong',c:['Green','Yellow'],img:''},
+    {id:'OP03-040',nm:'Nami',c:'Blue',img:''},
+    {id:'OP03-058',nm:'Iceburg',c:'Purple',img:''},
+    {id:'OP03-076',nm:'Rob Lucci',c:'Black',img:''},
+    {id:'OP03-077',nm:'Charlotte Linlin',c:'Black',img:''},
+    {id:'OP03-099',nm:'Charlotte Katakuri',c:'Yellow',img:''},
   ]},
   {key:'OP04',title:'Kingdoms of Intrigue',sub:'OP-04',cards:[
-    {id:'OP04-001',nm:'Nefeltari Vivi',c:['Red','Blue'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUNcrM0k22LtZHGRLTthXrNJsqLLwnbX92V9O4UxbuIiAwWpqrDwGKokGRNqHFAagMMJ_e_HpOW6-mJ0v8GofNLwD0vDhxZZCT0R3jGeXxAMrPv1xui4rwDODsnH_hxr_rbRhiMgBj3eufDL4s=s161-w117-h161'},
-    {id:'OP04-019',nm:'Donquixote Doflamingo',c:['Green','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWZYPz88MyQFe9QTADZVwGcHEuywGN-WUwhDQ8k4ZumiECoseM43tG91NGiX70QdJhw-nr5yvHd59Bf3PYUDRbSxF2Vp6byyMY2q28SkanC3t6PU_Kj6avyOFV7rrpz33AVB5OvP7Ylv26l5yA=s161-w117-h161'},
-    {id:'OP04-020',nm:'Issho',c:['Green','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV6tZExFgFiUhxzpN1bpsG1v_YXbHCWOWDjohL3rJM5GJ0R9VFsrgmFt2In8x3ifQCSPBFYXoj3mlwFjl7Xs-XhU-fbTJGTUjqTGLilpJYc3E1QAYjhSBJBz52WCfK9SrhqVQlflJpqF_DL_60=s161-w117-h161'},
-    {id:'OP04-039',nm:'Rebecca',c:['Blue','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUqQdyspnaWHTyiEXpxHkCsVXXq7KYkJQq4bD_yDp_QtltKoBgmgldyCdUAjbg6TnxP4TCPoU3OrpyHZ2GDcgn_Hzqw5YMFzjATXAcupkxLatd9PjCeyRx0hQXExAfB0bZDTEaF5s-bvF7SFA=s161-w117-h161'},
-    {id:'OP04-040',nm:'Queen',c:['Blue','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xW7L4rcPv60VLN_w_NaBe97gTfm4lHT2QbyHIN0M1XBzvk0rXyRr5zIbUNzGsobCMbZtRRAlml6qDaLKYE_wl52S0hKUVyGm4K_Zxy1iCMowi_axNbnB8O3qWsLI-NbdbQ19dhSU8gCmhfLiQ=s161-w117-h161'},
-    {id:'OP04-058',nm:'Crocodile',c:['Purple','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWoiFa62xejPN0bfa7bXyB6FpyKstVTxXUZtjZlWlcq5AzGiu3vjrq57IzBURRDHYktKVyZCq0zcxyS_u8KJVtpWPFt_gnBp8YTUrPdyI6Q5BXqPOOxmrL8qPZjV-BeCaY-MW69o9VlCNlfRA=s161-w117-h161'},
+    {id:'OP04-001',nm:'Nefeltari Vivi',c:['Red','Blue'],img:''},
+    {id:'OP04-019',nm:'Donquixote Doflamingo',c:['Green','Purple'],img:''},
+    {id:'OP04-020',nm:'Issho',c:['Green','Black'],img:''},
+    {id:'OP04-039',nm:'Rebecca',c:['Blue','Black'],img:''},
+    {id:'OP04-040',nm:'Queen',c:['Blue','Yellow'],img:''},
+    {id:'OP04-058',nm:'Crocodile',c:['Purple','Yellow'],img:''},
   ]},
   {key:'OP05',title:'Awakening of the New Era',sub:'OP-05',cards:[
-    {id:'OP05-001',nm:'Sabo',c:['Red','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUiNpxMY62hv-XNXTAKFv81V8p8RiUmE85U9b8QYUQb3QzG0GoLHX43-BWRJGWmBhtz4PXCme8W2VdivngOPPXOqSu5mKginGOhsDdLPeKIwO0skwqmCc5eu_L5RnGKfF6Nhz8KGEHPg3alVRg=s161-w117-h161'},
-    {id:'OP05-002',nm:'Belo Betty',c:['Red','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUBfEigW1aBcLU1d4J9p00IszRt4Q-lBwxk63MT3fkV3gmnP0QiPBrxfXXzhqOZZMlwP43OvJtdOEL7dpChvO8cR09KjDbpa7IRmhT3GiqRyP722Cw2yY3Fo8dCYdU8PeC66NmuAcBnpMQCIkI=s161-w117-h161'},
-    {id:'OP05-022',nm:'Donquixote Rosinante',c:['Green','Blue'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUpqYenQ8Pgi-ULwKxNYuJTj4D2GOBtJogtEmUHnOAEIFuWREq7K9kNIQSRNasBHUW1UT3F75E5-r_Kb3pRDo0AO0t5VyAUunFTErf01sJ-9FnkFJpLYjdVkmkmGHos-HvYI6Ne7-VwP_Xf8Q=s161-w117-h161'},
-    {id:'OP05-041',nm:'Sakazuki',c:['Blue','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXX8HLvEzs5MAIKPMUOSZCm0jmQ-SLsomEooPf8xM6N5Jd-Y-Kd4gVco6DFhKpXQRXalPy9X6KdRUyiuB5zqVhpxUlsaYlXmnBKGaVHV9hjRksEhurbMyQ-IUSC5ofT4R7HZAZHElAV1e3Gypg=s161-w117-h161'},
-    {id:'OP05-060',nm:'Monkey.D.Luffy',c:'Purple',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWJM12mPi3L9JYORju70v_YapohW-8YAik619OsrwF5OAOFVtkX9G6LslfVKiroSHr2uwy_WDfVPVuKVcxWBgXRJZceC1iWgcEWh9A0OOxgbWxVcwbuYUcUGON6gUKnB9EvhhO4ELEsXQKMSzw=s161-w117-h161'},
-    {id:'OP05-098',nm:'Enel',c:'Yellow',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xX13S-C_C3R8mPHQx1ECZsclwDAbLJ-AwhJwMdMXjO4KY0VVxsgsx4VZP8qDuoolZFme_IFvjB-HCGdnMHF151XdUcqZR2SsmGwbHv-5BRc9rSy2VFGJa35E1Xc13MJENbrkc5NDR7y3BGPnFs=s161-w117-h161'},
+    {id:'OP05-001',nm:'Sabo',c:['Red','Black'],img:''},
+    {id:'OP05-002',nm:'Belo Betty',c:['Red','Yellow'],img:''},
+    {id:'OP05-022',nm:'Donquixote Rosinante',c:['Green','Blue'],img:''},
+    {id:'OP05-041',nm:'Sakazuki',c:['Blue','Black'],img:''},
+    {id:'OP05-060',nm:'Monkey.D.Luffy',c:'Purple',img:''},
+    {id:'OP05-098',nm:'Enel',c:'Yellow',img:''},
   ]},
   {key:'OP06',title:'Wings of the Captain',sub:'OP-06',cards:[
-    {id:'OP06-001',nm:'Uta',c:['Red','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXBHS8Us0uW0H3Nhtqi4nEBk8WkvR7HcK9jdRrzZSD9bXio6Bzt960TJ12v9RR1ObCjO2vGykG8dFhwdF47i-cy880D_dyXA6_XJ-LdKHLmbHOTOg5Qg1j1WdJyaua6TC1-uRc64mOULg_2Beo=s161-w117-h161'},
-    {id:'OP06-020',nm:'Hody Jones',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV5e26z39LhtJlxdVgkM6kPa8U8rEMKpfoyn0hEprQEoZSbIgTkS6TqJ0gFspVVKrmQ5pFhfyy3NdMFfHd1xUuaERmkT_mKRX-ZC9_gCi_Cfw8Qd6PkrLAvdupZiBJaVapPmTr0kOJ92mMuZg=s161-w117-h161'},
-    {id:'OP06-021',nm:'Perona',c:['Green','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUEt3GgSzDB1koETiESe22aAQhMMNx5r5vI2jr4QV8XiZN6oSrEOpOCMxhPxAqL0GBatxYzkpDPO7DfKPA_Ms5ckMtt4lWf-8ZZiai0mz1zUy66OaC7Bpss0MtthQvuqCiARR3GUl_YWb3_sQ=s161-w117-h161'},
-    {id:'OP06-022',nm:'Yamato',c:['Green','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXXEsVw6zIhu8u-hRuVU1cRfpJlJw4S7dxVuqB75LZ0kPJov6gWxBeWcCHqxjnUUWeFv5F-Tu8NTyBIMP72NqXTIfIcJTAl8du1VTX_49sbltKLqgxN2eEBn5S21ojutLMuWiXhZSc=s161-w117-h161'},
-    {id:'OP06-042',nm:'Vinsmoke Reiju',c:['Blue','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUiEv6ykOrHXY3sIKtijHLbdmwhsN45-1ylxmGVIQd_VDTx84BLRL6KBObuEc70peN6hbK7M77BgPWOtNAMKqoXHTRNoh3ywrcgrWoUsLzAFCrzR6QhiKIaKCTsIrmrC0gcytBqArkT_239qlw=s161-w117-h161'},
-    {id:'OP06-080',nm:'Gecko Moria',c:'Black',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xW3xYe7t1SsK7Hcl20r3S60xSWUVSoQEgUp_5lMBT9-fIowwW4o3CwvQ9PSk-4h_5qJGUZ8xFmOyR2Ck6ZXZHtuUoeRDdan_jGmbrYc4FUPtUUgSrmrqcL2SriYu1WWAMjcfLQ1vv8O2DRJEoU=s161-w117-h161'},
+    {id:'OP06-001',nm:'Uta',c:['Red','Purple'],img:''},
+    {id:'OP06-020',nm:'Hody Jones',c:'Green',img:''},
+    {id:'OP06-021',nm:'Perona',c:['Green','Black'],img:''},
+    {id:'OP06-022',nm:'Yamato',c:['Green','Yellow'],img:''},
+    {id:'OP06-042',nm:'Vinsmoke Reiju',c:['Blue','Purple'],img:''},
+    {id:'OP06-080',nm:'Gecko Moria',c:'Black',img:''},
   ]},
   {key:'OP07',title:'500 Years in the Future',sub:'OP-07',cards:[
-    {id:'OP07-001',nm:'Monkey.D.Dragon',c:'Red',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWFU6lv9IK-4o4cN9ct51wI38VxOfTYyndpfgFMUUXfrjPynN4ccR8aBEEYIlMd3M8Uga6JhtCGLAX1e9LpXdtyVj3gyCqWRf041cQQQb5q9h6gtmpTJ82VF_QdmfP2NALCngXaNlQnufrcau4o=s161-w117-h161'},
-    {id:'OP07-019',nm:'Jewelry Bonney',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVizKYlhysZ6TfK0QplUi4wTjUW2AMLv2A3rgpFT4lTf_yhJfgXczf2Ppzwr3UjWP9HyTTnzsX0tLXNSc7eaVT6Ir24BAIhbKtblb1bYzw39yGn78EaSwAkal20RZ-8Rp1FCKJxZ0M-KgUomwY=s161-w117-h161'},
-    {id:'OP07-038',nm:'Boa Hancock',c:'Blue',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xX9xYLKdGhWcRUSXispATIMAHi-4vxDSCsM-ReHoY5J00XR5icm9fyhITLw4qMGR8p-p6L1OOLyWa8U1sBbHVkfSZeBTzht-Jp5VfDKPDW7dwHA_PWaS704g-9YlSf8bDU_UhNISpX8tDjLzw=s161-w117-h161'},
-    {id:'OP07-059',nm:'Foxy',c:'Purple',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUr25VTj3CclqXoU7j1nl62_1W2jojGgFlmqhsbZOiELfvj2ohcbNcMRWXXGKeFSY7txMWxTAK4a0L2sl5wIxbEnfD0OVEWhzZaP4xba4kF0-rFUu4WBW1D4eVUPmsZBo9bzcp5SF9Q_zCkFRQ=s161-w117-h161'},
-    {id:'OP07-079',nm:'Rob Lucci',c:'Black',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUFxRaXk4SiDtI0ptzOcn2lMn_2JrvAQCzG1knL8_89E0KOdJ_q6YF-DSR5w037Pf-4qVdskeNynJ9MwntbXZqV9DYwYxqA9IuMIkfg4Fx3FB3YkpLBr6Zu5Bvd79VqBvGqkVKYfEGGgaYLQiQ=s161-w117-h161'},
-    {id:'OP07-097',nm:'Vegapunk',c:'Yellow',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV5KRGVpXkRRk0mc6qqbWkbX20AaA4rBPAjjUUVwikrFRv9aDWVcH-nHYv-xgE3lyy-_6vCwNJc4IsfQeg_tVe1kFba9UyGRJN_WdIvMdfi9fPUdrAaLgs7tA73hrbyY_wx9UuBSqBzfNdyK5Y=s161-w117-h161'},
+    {id:'OP07-001',nm:'Monkey.D.Dragon',c:'Red',img:''},
+    {id:'OP07-019',nm:'Jewelry Bonney',c:'Green',img:''},
+    {id:'OP07-038',nm:'Boa Hancock',c:'Blue',img:''},
+    {id:'OP07-059',nm:'Foxy',c:'Purple',img:''},
+    {id:'OP07-079',nm:'Rob Lucci',c:'Black',img:''},
+    {id:'OP07-097',nm:'Vegapunk',c:'Yellow',img:''},
   ]},
   {key:'OP08',title:'Two Legends',sub:'OP-08',cards:[
-    {id:'OP08-001',nm:'Tony Tony.Chopper',c:['Red','Green'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXNm6AJQpSx43y2ATGdcJzi4zNACrY_2vv__cNyHT0zLT1oQ6njSQP_QZzkkKrwwGeSdTt9g_1AIQ7IstTKpufeRdehIFxttYWoUwAfZIQqPSdWvIHDWc2Hmy453YQwR-ynFRyXwD_dgFu67w=s161-w117-h161'},
-    {id:'OP08-002',nm:'Marco',c:['Red','Blue'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV9LdqWnntdOJKDjSSfdDdEwn1KfDpd7fbiXOb359snVxYF-QXAAojn26XIrKX_-rVjO3p9DVce8erTQ-Yz5sGUTdGulkpxerJdqlRlw1BWC5dAk43R6UDUU_h950FPFsE337nsU637345HQMI=s161-w117-h161'},
-    {id:'OP08-021',nm:'Carrot',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUo4RLSAgqm8eOj_AagSF_fC8dVjAvANSzstCmCit_FVgBhwNHB9VI6o0jL-QajGskuowZ0Q9PA8ltWt7CWJ7ojK8G-GyulcDiUMpsR2or5rnHlsNDHDdeS5LPB3xDiAi7Ll90PAaCjbA81Zg=s161-w117-h161'},
-    {id:'OP08-057',nm:'King',c:['Purple','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWjf30oIrebGPp08eSyCZPnfEdLTga7c4l4eUF8aJtnCwjGFVNIS5Eaqm9cljA9YrJZKl-GgROzNKO8l_r8xHjKJZvLPC1WL7o7iNSGq3XG8GftGFBq9pKvTiet-vKM2GtH2fEMC7nX4q5g6Hs=s161-w117-h161'},
-    {id:'OP08-058',nm:'Charlotte Pudding',c:['Purple','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUqDqwIRVoKdktWijqqXvLKbDJt3dYayvYYvb4xfYRb_WjuCMDpdrbirYoz8MuIuoK_iY_9Mwg27p_d2rhTBakMC1dkqK8REBWpq0lkTcivw9FS7ZxTVCHRY6ja0HpNlwzvfeqywxPW9pmZ2GM=s161-w117-h161'},
-    {id:'OP08-098',nm:'Kalgara',c:'Yellow',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXSJcKY3798vH4OLz7grD6XurL3nnaX3szOvImjabdm9g5ldRHINiYLRRanQkj5aUBmh8yE1W7FpFVHw7cbj6OItXuvL22gmhUMfIMhsVsoNFZsJgFg94981As8hXDadTtwWleHDsKQUceQiA=s161-w117-h161'},
+    {id:'OP08-001',nm:'Tony Tony.Chopper',c:['Red','Green'],img:''},
+    {id:'OP08-002',nm:'Marco',c:['Red','Blue'],img:''},
+    {id:'OP08-021',nm:'Carrot',c:'Green',img:''},
+    {id:'OP08-057',nm:'King',c:['Purple','Black'],img:''},
+    {id:'OP08-058',nm:'Charlotte Pudding',c:['Purple','Yellow'],img:''},
+    {id:'OP08-098',nm:'Kalgara',c:'Yellow',img:''},
   ]},
   {key:'OP09',title:'Emperors in the New World',sub:'OP-09',cards:[
-    {id:'OP09-001',nm:'Shanks',c:'Red',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVWHZdLlBtcuweIQRiVunypAQBoX7rRaSJF0GlVWxEGsFmJ4VHiqmO_NKQdk6jOQWhojlTmu3GeV5xI5up8-14IYscyyBvp-urKdKN0u7NiAzj_xtfL2gG4-7NHVEuPDqzX6S3d5PlaYUtA5k8=s161-w117-h161'},
-    {id:'OP09-022',nm:'Lim',c:['Green','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXiDy97Z4sGT9Y2MMMR3MLrJ56eECQimDCxLYx3JrPMfpo-7r8LIHrRRTRZwVyayLBDLzMzAQn-DxuZXhE7Mh3mwyfN9DTO7cvrfk5jg6qSecwHIm_Uabr8ey7BDi62RZ38aN8LEaxNWe-y8g=s161-w117-h161'},
-    {id:'OP09-042',nm:'Buggy',c:'Blue',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUtVAG3aiGgf7b3TYOfJb6F163lr4IQncd4Z-8_YS2o5lnMBAnavhTPqnwC9uFBdpkfLz3XnilLRMDceSqYM9JaMGGTJPm2IG9yMnJUDLi0bdWJAPsSGGbWCtUP33yOB-DGosVe7fiDqICWCoc=s161-w117-h161'},
-    {id:'OP09-061',nm:'Monkey.D.Luffy',c:['Purple','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV96XNSuXN_kYznwl_k-wiP5b6rbbInVuaSVcpHuOqha516DAtbSgjnEEjbrKM3QG99YEu3UOVI21PU2g43VlyIYX4yfYSAfH3GEKzxU1UkYsfbAOukvK0klOirM2dVERJAXW_3clwkZQN-71w=s161-w117-h161'},
-    {id:'OP09-062',nm:'Nico Robin',c:['Purple','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXHdUzsUg9kRhcbAzWfDcr0rHZUKH5V4h7gldvn-6Cn3kQLI378NINeo9da3Hdwcu_stqSpkrq8TFcOt26QuEQfoDuk-2bnSDoju4G2dAHJJvp6FjDnhFDPbqbhR7ANTxuNekk3KJn7He2Wxhw=s161-w117-h161'},
-    {id:'OP09-081',nm:'Marshall.D.Teach',c:'Black',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWlQkNa7h08yAQIpZ8lGjsp80-HD9dqZnnQyq8fgsZleq-HzSEFeQapmArIA9pY8pEL1HRRsLBA4jZF_jB6kOqMJSGeguBnodY-LI93RBkhMO9Y7i6blak766F3GAtUBy57R1APUEkObtOOdLw=s161-w117-h161'},
+    {id:'OP09-001',nm:'Shanks',c:'Red',img:''},
+    {id:'OP09-022',nm:'Lim',c:['Green','Purple'],img:''},
+    {id:'OP09-042',nm:'Buggy',c:'Blue',img:''},
+    {id:'OP09-061',nm:'Monkey.D.Luffy',c:['Purple','Black'],img:''},
+    {id:'OP09-062',nm:'Nico Robin',c:['Purple','Yellow'],img:''},
+    {id:'OP09-081',nm:'Marshall.D.Teach',c:'Black',img:''},
   ]},
   {key:'OP10',title:'Royal Blood',sub:'OP-10',cards:[
-    {id:'OP10-001',nm:'Smoker',c:['Red','Green'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xX5Te4Hq1DF9OjJAIwy9FZQ0cjHwRpR2suIC2P1P_-iBACmfBB4A2Bp9XUNNYGLVBVqHnGIo_cAzQfRn8hNMlgKQU0HKQXfxp7-vuKyqmByEcXF_PxklMquAg-yPwpScRHQWXb8YDezZ2DnpA=s161-w117-h161'},
-    {id:'OP10-002',nm:'Caesar Clown',c:['Red','Blue'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXbG1NmVTgr7kSe_VL_Nl5JkCzY7YcvjDM-7PyiRn0AoWDdc8F3qrdt0Jq8gY12UHsi2l_kcDJpOE1mpSn4BwAiHbfZnXsU2ESC1t97p7xza4aAbjkK8IlVODMNAtfLLZKi08TM28kJXv54jk0=s161-w117-h161'},
-    {id:'OP10-003',nm:'Sugar',c:['Red','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWNcNqwywfLwOxUD7IEUySDPIl10HyWs7DFRNfcdQnd5A5-RI7KG2tRRUykQvs6tPy_Ati-1na0LBxFdGe9CkoeDynqsYAossVSBr5OTXaUNbeCwIqkkgPAyg0Z5rtSU94I30Mk3BVfzo3QaQE=s161-w117-h161'},
-    {id:'OP10-022',nm:'Trafalgar Law',c:['Green','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUtQhV6nqlJ_Eu6WxFvvS3iE6HRg3dKgYoBd2IQ2I3fCi7YoK76xN4VegBoVk46AmrAj2vpFPYcbc8TV8nHpHiN2t9_b4fk_XAaKLAUdGJ4YY6gqfUl8tYOGNo2YsKqKhzMjYzbMDO2fvCRXMs=s161-w117-h161'},
-    {id:'OP10-042',nm:'Usopp',c:['Blue','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWEMcqDHDcSRCtsHdMCVou82yQTJlwIeIvYqq8bi2zfY0kmBNrOrSzcjUO7YJ8YDPShu6pMlaNGAUDB6cHrLVwfSsoeZfssPNILUqX6d7_oLgdx3-CFBCLRLEM0kptCec92aUZAB3h065j2Ivk=s161-w117-h161'},
-    {id:'OP10-099',nm:'Eustass \"Captain\" Kid',c:'Yellow',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUtuRTEJm0B7qt4vAeAI4SSzwrYGgb92f8Pqt7ZAjh4OUK55HJqrhQvKGiTLAg8_pJ7AvqzTp10esal2EwpFZw-hEk2pXNaqZqD3hveJl8hJns95fBZfOhVsZPC5ssIiHn6612bo0MBcRPgCLY=s161-w117-h161'},
+    {id:'OP10-001',nm:'Smoker',c:['Red','Green'],img:''},
+    {id:'OP10-002',nm:'Caesar Clown',c:['Red','Blue'],img:''},
+    {id:'OP10-003',nm:'Sugar',c:['Red','Purple'],img:''},
+    {id:'OP10-022',nm:'Trafalgar Law',c:['Green','Yellow'],img:''},
+    {id:'OP10-042',nm:'Usopp',c:['Blue','Black'],img:''},
+    {id:'OP10-099',nm:'Eustass \"Captain\" Kid',c:'Yellow',img:''},
   ]},
   {key:'OP11',title:'A Fist of Divine Speed',sub:'OP-11',cards:[
-    {id:'OP11-001',nm:'Koby',c:['Red','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUCv8fOhHDkb2avlKAdXc0xLyzhxCxuH6Z3weE19alt71rvE3WW0YneAGYLT6DUxF7nMSOvjAOL2kheK9VuGA2YXADMfbmeq0JzQJHjUV07nIEiVfnfiCciExKDT5Id0HuI2Est9BD2J9GhGG8=s161-w117-h161'},
-    {id:'OP11-021',nm:'Jinbe',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXUbG8QLRdAtk--uI-6z35GfmqHbOTVyOfz3SgTOb7EJhTdMGaTsDchOWOT2Khv9KYHmfCye1EuLi8vUfQXkF7Cab6aAR0TeKxAFbQLjGAcP_OEDgyPx2kIIvTKvABM7wlM7aUbIR8NuqMmJIE=s161-w117-h161'},
-    {id:'OP11-022',nm:'Shirahoshi',c:['Green','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWSV_XdRU6keJS88LOjti4ycHrc21tx9rv5q9XUkdbec_vbErREHExx_fXaWRadExhHUpHMnabMttKzXqjJbqKQzDY-0fcFh89qmn-RmJweiA4WrkGJIHjRsjaEU4ZwF7HTj-jpESNB97tF0Rg=s161-w117-h161'},
-    {id:'OP11-040',nm:'Monkey.D.Luffy',c:['Blue','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xU9c4_xL2DLKCTdnHd8ki6pJ8R2pfPj8GA0ubLRMRgDn-V4-ZIBnz5y3QTkwMRdg1WQ59-AVshi8AZlKX2qeleNNB-E74yp4YvkT8JiWs86Mz9AWywebremy9gGwx97eu2iPuNxZ5CQPfIH40A=s161-w117-h161'},
-    {id:'OP11-041',nm:'Nami',c:['Blue','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXriDtyiP7B6u8fFa3d2mpIf53lN7vnV9P-K91U2eKDXbx8TeCpYFutmvyIiErQyMxiyzgSyUb-t-HzogXnD5IyVmHdGxFQjjTDx_rVuc0sHKyxwt96xKhah9nx1bjtc0YVtGcGsiTtJHifV8U=s161-w117-h161'},
-    {id:'OP11-062',nm:'Charlotte Katakuri',c:'Purple',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWF7nbsbWkrfWdiNMK6mf9WHnaLk9zI4_PwdnzL9xCpwyqqoKLi2tgWO_drlBVJ7ct-PEu84ZD2bxzWR8dV7BAhgZUQXtGMTiifyjnMqapmh680isUy_S4iqPVctWUj3cxf4sgc8wo0EjgTB_g=s161-w117-h161'},
+    {id:'OP11-001',nm:'Koby',c:['Red','Black'],img:''},
+    {id:'OP11-021',nm:'Jinbe',c:'Green',img:''},
+    {id:'OP11-022',nm:'Shirahoshi',c:['Green','Yellow'],img:''},
+    {id:'OP11-040',nm:'Monkey.D.Luffy',c:['Blue','Purple'],img:''},
+    {id:'OP11-041',nm:'Nami',c:['Blue','Yellow'],img:''},
+    {id:'OP11-062',nm:'Charlotte Katakuri',c:'Purple',img:''},
   ]},
   {key:'OP12',title:'Legacy of the Master',sub:'OP-12',cards:[
-    {id:'OP12-001',nm:'Silvers Rayleigh',c:'Red',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xW8fB-JXX0E-lubVWAkZzqu8ckwA8Q1FhvkShHSdaXu7Hv-AnrPsrrFOm1Ciu4x5SNrvRDFjbD45JOegU7MgsYwvVUH7V4Hbx_-Qacj4lt34mc7Pd-JYz7z-LFpdorkPPdo4E8Z6-qAcWzSSY8=s161-w117-h161'},
-    {id:'OP12-020',nm:'Roronoa Zoro',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVsvcTVRjKWyt0lD_MPxncpGGF9imZQXZTJmDd2iD0tiE7cjVoGZ4pLsHYXfW0yWhp5R5bHwAzJ_U1mU5Xm3IaEQ2tbllzwW1MHQoRmW2KTKq1WnUQlnG7mXfyK86pNe7b4W8mctGvemf4FDs4=s161-w117-h161'},
-    {id:'OP12-040',nm:'Kuzan',c:'Blue',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVYUmnuzbOGvgN7srJolEyLtyOrTNW6f3u8-Alznc-ZoQWhEHCut9AvtzRZQFHbJLQOcmh3P0wPl7oLwnph5MGk52xwKf1vlB-4n9XBibCRT0vWpZ982Xki2nuZ72ygAOxyZmA-UDdNGLre4Q=s161-w117-h161'},
-    {id:'OP12-041',nm:'Sanji',c:['Blue','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUWT3Ku05eByWEkqJxBmjQ8pSnOc911Sh-EsfY2H_3e4y0_veyP9PqwbTdvLEtEhFrfvk9r8CbjYalBR2PsauTeB2aCNED_rzuSsg_V2aaVm0CD9XvYgiTzDNiXq1Qbuc3DQxNFTbkkyZzapTI=s161-w117-h161'},
-    {id:'OP12-061',nm:'Donquixote Rosinante',c:['Purple','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUENkhyMfQ3e7hHH8hE14hRmb1JBuJ41r0RVHbB4nrnx16gi8KPyHJFXIZezpn7fTBemtaLITUAi4CLRagzQ_-jLF6nh5qiTARsH5wLMe0KaVYXLARUDxfu6-4gyaO1ZIrMJOycjwew30079rc=s161-w117-h161'},
-    {id:'OP12-081',nm:'Koala',c:['Black','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVXMRVSHPg6UmfctEWHlV1JAWAVKAlWt6gJEyFZ2FB_x1-LmCR3y2dbYMBprXYE1XdSLX8fMzwY5thkVSo7s_QMFZM6iw7XDpUQbdFyWMuGW__roDfAXEeEhHJ1qHmNiI4zQ94vlxL_wqEEwHI=s161-w117-h161'},
+    {id:'OP12-001',nm:'Silvers Rayleigh',c:'Red',img:''},
+    {id:'OP12-020',nm:'Roronoa Zoro',c:'Green',img:''},
+    {id:'OP12-040',nm:'Kuzan',c:'Blue',img:''},
+    {id:'OP12-041',nm:'Sanji',c:['Blue','Purple'],img:''},
+    {id:'OP12-061',nm:'Donquixote Rosinante',c:['Purple','Yellow'],img:''},
+    {id:'OP12-081',nm:'Koala',c:['Black','Yellow'],img:''},
   ]},
   {key:'OP13',title:'Carrying On His Will',sub:'OP-13',cards:[
-    {id:'OP13-001',nm:'Monkey.D.Luffy',c:['Red','Green'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUYuw4Eab6462GVXG9bW919WZxhTKc4pkCgHPPW4mjRhuPv7gNK7nZPdE2cIVGx17Nf8doPnAD4dUqKqunTVZiE4VNIrbTm4MgmTBDJAni0BSzlmIdzDPah7sAlqG5xkZc971pux8aBzY_-4Xw=s161-w117-h161'},
-    {id:'OP13-002',nm:'Portgas.D.Ace',c:['Red','Blue'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUy_fS_jwSPQr17cF0EzIGxYXcKSwnGsr6rNyrMBt5KQKq4Yn_11hb-ZVvwDF8oSdtxXIeaWsi5ci9MISjvcUleahnljffcBBimvjsysZK-DeeJKnbkjOD2_ibTmyQD8qF40CVl8jlMGTMfvVk=s161-w117-h161'},
-    {id:'OP13-003',nm:'Gol.D.Roger',c:['Red','Purple'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xU4AAA-M-Sw0fEZ08wOYkn-u7RUmXFqi6mLp29BfbZ05tNjlbkYDFrh55oKk43oV72A6zCe52Nm8iptUtcQyJRJeKEOdQiItEFRg19CIBD_4QnKxCKA24zoM4p0n42-EOI0HQYzT6nPvN0nMg=s161-w117-h161'},
-    {id:'OP13-004',nm:'Sabo',c:['Red','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xViWmPgJyJeijqSFsnJU1J1hwn-D7lsWC0fESNz5jId1b4veG3aRgEOyVwtZt8tvNuHrsUKJtcXgIFLZMJqILXewoo_2A7j9yeWLIpZTiol6qPTg_isJZMnGXA7V_xh4Wfg0O8gLcKW2MboMAs=s161-w117-h161'},
-    {id:'OP13-079',nm:'Imu',c:'Black',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWtsNkgWmXiiY7MfXvdMtWXkFInyKVPa7LFLCf8oNK2rGmtCNuhsd_R4EMrQ_9wqpUEU-m-H1FzHyyhW6xlcTbUprPKRrhLhWwQOS2cmAZMJCQ-SLuUMhlDyCg3XQc02AcKVZBJeHb61AY5lg=s161-w117-h161'},
-    {id:'OP13-100',nm:'Jewelry Bonney',c:'Yellow',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xW6LormnhvE2IYWlCjyiXRaJhwPm7qdY_dsZoYQ2Na8uul8-QG83nDLGlkeRQIBbfFlM2IcDf6ljzy26J60_46b6_lv_J4jb3XXRwP5vdVZJJ_0dGd2J0eD7fAYkP47kgBJW8lHr1L772xhzgs=s161-w117-h161'},
+    {id:'OP13-001',nm:'Monkey.D.Luffy',c:['Red','Green'],img:''},
+    {id:'OP13-002',nm:'Portgas.D.Ace',c:['Red','Blue'],img:''},
+    {id:'OP13-003',nm:'Gol.D.Roger',c:['Red','Purple'],img:''},
+    {id:'OP13-004',nm:'Sabo',c:['Red','Black'],img:''},
+    {id:'OP13-079',nm:'Imu',c:'Black',img:''},
+    {id:'OP13-100',nm:'Jewelry Bonney',c:'Yellow',img:''},
   ]},
   {key:'OP14',title:'The Azure Sea\'s Seven',sub:'OP-14',cards:[
-    {id:'OP14-001',nm:'Trafalgar Law',c:'Red',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xUVEafeCNd4YuB1AjUpbQu98fVa5Nrp93en-2QG9lSFKg2waDfnG0LuSeLJf9-m9qT-xzPkWGo90ZyqVTdNbgK7ITVGcOQVQJ-fUWAliiHDuJHuTuzhWf74anz9MZ0Lqe_mWw3sa945Rbyloa4=s161-w117-h161'},
-    {id:'OP14-020',nm:'Dracule Mihawk',c:'Green',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXJeiE88teeTWjL8QaUt1uVTP1Stwh-a7ihm9D1kZgyZ2vNPFj3VZvYFUImKumxml8bwYppAH2r_a29figzRGzGQlV2i6iGkmol7tKB7LZnMjSdWuwXY2WDX_evsC7xM4TmkBzXReXBHFlSgA=s161-w117-h161'},
-    {id:'OP14-040',nm:'Jinbe',c:'Blue',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xW9KZx55hfGn3kMjsNJpHit0lOVEa6dMCeJVVGisHivn6_qZOIBChNk9-dRHKg5Q1Af3H1nM9ikFU5WfmA6JIfqNjJlkxBuXOywfi0AJbnQxPlX3lKL2h6Sb4kzHuf1Ghr4_ZTaZ8EeukTLgjo=s161-w117-h161'},
-    {id:'OP14-041',nm:'Boa Hancock',c:['Blue','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXZekewDeVyPAxSqJr97cA6lAsZwXus7Yj0jt6BgShmmesRCJfu7c2VT7M9SF-DKF_YagYThoutT8-grU3eiFmJyRJ6TVS1jBLGt344mxWyXoEE7W1W0meesTdQEMcZwZOZWQ5h6G8qluBBbA=s161-w117-h161'},
-    {id:'OP14-060',nm:'Donquixote Doflamingo',c:'Purple',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVmkaKqF4dTpvoWuUQ99HttvPJfFXB6-CEZ_k-esmIH0iW0eLlPu3B-8kerM53YLCeoBn3O_7Cx9IzCFhH6XucD6hJOaFGGqO3kgCxjYrzSFXsrSYWCfrE-dBJrXyaDsPFov3SDGPjbqJBMOg=s161-w117-h161'},
-    {id:'OP14-079',nm:'Crocodile',c:'Black',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXtW69HIsvs8n4wZk56P7X3rgnyjMc9IzqGl0eyUf3SylWZvzFMsX4r5_z38p6w6U_r1_2_tnIczDbQKp_KIL16PQgM4CzH-NhPUNRT-xtB7doeCoSCwXFqAl_r6C4XIbaUrd_rZT2gxGLWow=s161-w117-h161'},
-    {id:'OP14-080',nm:'Gecko Moria',c:['Black','Yellow'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xX3yvNqPR6cepCoeK360wsjqYkem1pbAyFXfcB0z9sLe6jD9JfW782uZmpkyij51lqZ8bNVI2ojDOWnB05s4WTB6117bgEwMuwGUOhleQ3oryPcdnIb5S_dk05c4PEXN3zOSmB21jHMOOECWEg=s161-w117-h161'},
+    {id:'OP14-001',nm:'Trafalgar Law',c:'Red',img:''},
+    {id:'OP14-020',nm:'Dracule Mihawk',c:'Green',img:''},
+    {id:'OP14-040',nm:'Jinbe',c:'Blue',img:''},
+    {id:'OP14-041',nm:'Boa Hancock',c:['Blue','Yellow'],img:''},
+    {id:'OP14-060',nm:'Donquixote Doflamingo',c:'Purple',img:''},
+    {id:'OP14-079',nm:'Crocodile',c:'Black',img:''},
+    {id:'OP14-080',nm:'Gecko Moria',c:['Black','Yellow'],img:''},
   ]},
   {key:'OP15',title:'Adventure on Kami\'s Island',sub:'OP-15',cards:[
-    {id:'OP15-001',nm:'Krieg',c:['Red','Green'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xV9RsO9hE9898CuuYG77IyaIqBIivuodajakXr84r5NIZV8I6Ela9jTwSLhXVtamU7HoCxIX22-JFGQF4ViRxlf9pSK3Ob1EoVxyZ3RXV56CbDgQM1c83EfGQdWR5Zs_PCFWnZkuaSGx18ZHQ=s161-w117-h161'},
-    {id:'OP15-002',nm:'Lucy',c:['Red','Blue'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWKlyTZvsIjKrhUbMTWeXJGg21sWS3tK18pKGi8FgSEwcHuyPQs4MyDhgi0nvxvzYagmY34vgjCqatKlW76QaqCLdxY6x6XeOUAQc-PLpl0zEKBhm2l1JfE1gLVIBf9gi63sxc4Kcgx6iiH8g=s161-w117-h161'},
-    {id:'OP15-022',nm:'Brook',c:['Green','Black'],img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVqhxNza96I-8JkcZy0nj2Z3MQcrqDSeG-8VBSpjQJSq34rKdQskqUI0hzB85WtkbWOCu4sYO38uY9S6eFaJMAQxgsWdEmusrqOlga_2ZL_T8vUzcuTuBabd2l_yJCbV0vsQPfJYjmvLOcUhsg=s161-w117-h161'},
-    {id:'OP15-039',nm:'Rebecca',c:'Blue',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xVSoCqHaLSlbnEpnbsWbTiFEqNenAQuCeiHVGm3jpq03nq8FG11Jho_K8eX7BII4W2hM9G4ks9-IWN-9urutxTeCi5NwOrSOrnIu7GNwQ7QXCuNHqSlreEjse4h-0WIb2v92ZyOsweQtAMInw4=s161-w117-h161'},
-    {id:'OP15-058',nm:'Enel',c:'Purple',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xWMFzRUybiPcEmliODQPGP5NYIWThn-Q2qNqExhoVDuLBSQrdtFLQBFMKo4wAaM4odXJ2I1MX_czK8IUBeyL5BPq_2bglxbi0mhMnLB_Thj0UPqD3s09SwnLSy7etQ7F2p6L0NctT9kMRNZASE=s161-w117-h161'},
-    {id:'OP15-098',nm:'Monkey.D.Luffy',c:'Yellow',img:'https://lh3.googleusercontent.com/docsubipk/AP9E6xXLxWmOniL9MOmD3jZKo6mdRQCd6sPe_Y2a67zLR2OlEJsBcDbXZAi8jqUEh6ofel0VF2e33GBVThDai7AfWNnTgnYYpCtPQ6coJhSLBH2wfb2V85Lwndyx9lGqTIglMf244fhy_NYnHQPJIOs=s161-w117-h161'},
+    {id:'OP15-001',nm:'Krieg',c:['Red','Green'],img:''},
+    {id:'OP15-002',nm:'Lucy',c:['Red','Blue'],img:''},
+    {id:'OP15-022',nm:'Brook',c:['Green','Black'],img:''},
+    {id:'OP15-039',nm:'Rebecca',c:'Blue',img:''},
+    {id:'OP15-058',nm:'Enel',c:'Purple',img:''},
+    {id:'OP15-098',nm:'Monkey.D.Luffy',c:'Yellow',img:''},
   ]},
   {key:'PRB01',title:'Premium Best',sub:'PRB-01',cards:[
     {id:'PRB01-001',nm:'Sanji',c:'Red',img:'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/PRB01/PRB01-001_EN.webp'},
@@ -608,7 +609,7 @@ function toggleCond(e,id,c){
 
 function cardHTML(c){
   const d=data[c.id],owned=!!d;
-  const imgSrc=c.img||(c.set?stImg(c.id):'');
+  const imgSrc=cardImg(c);
   const setTag=c.set?`<span class="set-tag">${c.set}</span>`:'';
   const pills=CONDS.map(x=>`<span class="pill${d&&(d.conds||[]).includes(x)?' on':''}" data-pill="${c.id}-${x}" data-c="${x}" onclick="toggleCond(event,'${c.id}','${x}')">${x}</span>`).join('');
   return`<div class="card${owned?' owned':''}" id="c-${c.id}"${owned?'':` onclick="toggleCard('${c.id}')"`}>
@@ -683,7 +684,7 @@ function render(){
       const stOwned=stCards.filter(c=>data[c.id]).length;
       const stPct=stCards.length?Math.round(stOwned/stCards.length*100):0;
       const toggleLabel=stExcluded?'Include':'Exclude';
-      const toggleClass=stExcluded?'st-toggle':'st-toggle included';
+      const toggleClass=stExcluded?'st-toggle excluded':'st-toggle included';
       html+=`<div class="set-group${stExcluded?' excluded':''}">
 <div class="set-header">
   <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0">
