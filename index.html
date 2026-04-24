@@ -143,6 +143,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <span class="sync-label" id="syncLabel">—</span>
       <div class="stat-badge" id="stat"><strong>0</strong> / 0 owned</div>
       <button class="hdr-btn export" id="exportBtn">↓ Export TSV</button>
+      <label class="hdr-btn" id="importLabel" style="cursor:pointer">↑ Import TSV<input type="file" id="importFile" accept=".tsv" style="display:none"></label>
       <button class="hdr-btn danger" id="signOutBtn">Sign out</button>
     </div>
   </header>
@@ -384,30 +385,29 @@ function initGapi(){
 }
 
 async function findOrCreateFile(){
-  // Search for existing file in folder
   const res=await gapi.client.drive.files.list({
     q:`name='${FILE_NAME}' and '${FOLDER_ID}' in parents and trashed=false`,
-    fields:'files(id,name)',
+    fields:'files(id,name,modifiedTime,fileSize)',
+    orderBy:'modifiedTime desc',
     spaces:'drive'
   });
-  if(res.result.files&&res.result.files.length>0){
-    driveFileId=res.result.files[0].id;
+  const files=res.result.files||[];
+  if(files.length>0){
+    // Pick newest (already sorted desc). If dupes exist, delete the older ones.
+    driveFileId=files[0].id;
+    if(files.length>1){
+      for(let i=1;i<files.length;i++){
+        try{await gapi.client.drive.files.delete({fileId:files[i].id});}catch(e){}
+      }
+    }
     return driveFileId;
   }
-  // Create new file
+  // Create new empty file
   const created=await gapi.client.request({
     path:'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
     method:'POST',
     headers:{'Content-Type':'multipart/related; boundary=BOUNDARY'},
-    body:`--BOUNDARY
-Content-Type: application/json; charset=UTF-8
-
-${JSON.stringify({name:FILE_NAME,parents:[FOLDER_ID]})}
---BOUNDARY
-Content-Type: application/json
-
-{}
---BOUNDARY--`
+    body:`--BOUNDARY\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name:FILE_NAME,parents:[FOLDER_ID]})}\r\n--BOUNDARY\r\nContent-Type: application/json\r\n\r\n{}\r\n--BOUNDARY--`
   });
   driveFileId=created.result.id;
   return driveFileId;
@@ -609,6 +609,44 @@ document.getElementById('exportBtn').addEventListener('click',()=>{
 });
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// Import TSV
+document.getElementById('importFile').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const lines=ev.target.result.trim().split('\n');
+      const headers=lines[0].split('\t').map(h=>h.trim());
+      const idIdx=headers.indexOf('Card ID');
+      const qtyIdx=headers.indexOf('Qty');
+      const condIdx=headers.indexOf('Conditions');
+      if(idIdx===-1){showToast('Invalid TSV — no Card ID column');return;}
+      let count=0;
+      const imported={};
+      for(let i=1;i<lines.length;i++){
+        const cols=lines[i].split('\t');
+        const id=cols[idIdx]&&cols[idIdx].trim();
+        if(!id)continue;
+        const qty=qtyIdx>=0&&cols[qtyIdx]?parseInt(cols[qtyIdx])||1:1;
+        const condsRaw=condIdx>=0&&cols[condIdx]?cols[condIdx].trim():'NM';
+        const conds=condsRaw.split(',').map(c=>c.trim()).filter(Boolean);
+        imported[id]={qty,conds:conds.length?conds:['NM']};
+        count++;
+      }
+      if(!confirm(`Import ${count} cards from TSV? This will REPLACE your current collection.`))return;
+      data=imported;
+      scheduleSave();
+      render();
+      showToast(`Imported ${count} cards ✓`);
+    }catch(err){
+      showToast('Import failed: '+err.message);
+    }
+    // Reset input so same file can be re-imported
+    e.target.value='';
+  };
+  reader.readAsText(file);
+});
 </script>
 </body>
 </html>
