@@ -14,7 +14,7 @@
   --red:#E8272B;--blue:#2B7FCC;--gold:#F5C842;
   --red-dim:rgba(232,39,43,0.15);--gold-dim:rgba(245,200,66,0.12);
   --green:#22c55e;
-  --radius:10px;--card-w:148px;
+  --radius:10px;--card-w:200px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
@@ -66,7 +66,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .progress-track{width:90px;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden}
 .progress-fill{height:100%;background:#27e899;border-radius:2px;transition:width .4s ease}
 .progress-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;min-width:52px;text-align:right}
-.card-grid{display:flex;flex-wrap:wrap;gap:10px}
+.card-grid{display:grid;grid-template-columns:repeat(5,var(--card-w));gap:12px}
 .card{width:var(--card-w);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .15s;position:relative}
 .card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .card.owned{border-color:rgba(232,39,43,.45);background:rgba(232,39,43,.04);cursor:default}
@@ -80,21 +80,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .card.owned .owned-check{display:flex}
 .owned-check svg{width:12px;height:12px;color:#fff}
 .color-stripe{height:3px;width:100%;flex-shrink:0}
-.card-body{padding:8px 10px 10px}
+.card-body{padding:10px 12px 12px}
 .card-meta{display:flex;align-items:center;gap:5px;margin-bottom:2px}
-.card-id{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);line-height:1}
-.set-tag{font-size:8px;font-weight:600;letter-spacing:.3px;padding:1px 5px;border-radius:3px;background:rgba(43,127,204,.15);color:var(--blue);border:1px solid rgba(43,127,204,.25)}
-.card-name{font-size:11px;font-weight:600;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-id{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);line-height:1}
+.set-tag{font-size:10px;font-weight:600;letter-spacing:.3px;padding:1px 5px;border-radius:3px;background:rgba(43,127,204,.15);color:var(--blue);border:1px solid rgba(43,127,204,.25)}
+.card-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-detail{display:none;border-top:1px solid var(--border);padding-top:8px;margin-top:6px}
 .card.owned .card-detail{display:block}
 .qty-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
-.qty-label{font-size:10px;color:var(--muted)}
+.qty-label{font-size:12px;color:var(--muted)}
 .qty-ctrl{display:flex;align-items:center;gap:5px}
-.qty-btn{width:22px;height:22px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:'DM Sans',sans-serif;transition:background .1s}
+.qty-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:'DM Sans',sans-serif;transition:background .1s}
 .qty-btn:hover{background:var(--border2)}
-.qty-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;min-width:16px;text-align:center;color:var(--gold)}
+.qty-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;min-width:18px;text-align:center;color:var(--gold)}
 .cond-pills{display:flex;flex-wrap:wrap;gap:3px}
-.pill{font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all .1s}
+.pill{font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all .1s}
 .pill:hover{border-color:var(--border2);color:var(--text)}
 .pill.on{background:var(--red);border-color:var(--red);color:#fff}
 .remove-btn{display:flex;align-items:center;gap:4px;margin-top:8px;font-size:10px;font-weight:500;color:var(--muted);cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-family:'DM Sans',sans-serif;transition:all .15s;width:100%;justify-content:center}
@@ -107,7 +107,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .empty{padding:60px 0;text-align:center;color:var(--muted);font-size:14px}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--gold);border-radius:8px;padding:11px 18px;font-size:13px;color:var(--gold);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:999}
 .toast.show{opacity:1;transform:none}
-@media(max-width:640px){:root{--card-w:120px}.site-header{padding:0 12px;gap:8px;height:54px}.tabs{display:none}.main{padding:18px 12px 60px}.stat-badge{display:none}}
+@media(max-width:1100px){.card-grid{grid-template-columns:repeat(4,var(--card-w))}}@media(max-width:880px){.card-grid{grid-template-columns:repeat(3,var(--card-w))}}@media(max-width:640px){:root{--card-w:150px}.card-grid{grid-template-columns:repeat(2,var(--card-w))}.site-header{padding:0 12px;gap:8px;height:54px}.tabs{display:none}.main{padding:18px 12px 60px}.stat-badge{display:none}}
 </style>
 </head>
 <body>
