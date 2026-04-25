@@ -142,10 +142,12 @@ https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/{SET}/{CARD-ID}_E
 
 ## Built By
 
-**Robert Ivan** — TCG player, collector, and eBay reseller
+**Robert Ivan** — a human on earth
 
-- [robertivan.com](https://robertivan.com)
-- [metaprinter.com](https://metaprinter.com) — aka Metaprinter
-- [SuperLuckyKat on eBay](https://www.ebay.com/usr/superluckykat) - aka the Trubish Bin 
+- [Robert Ivan](https://robertivan.com)
+- [Metaprinter](https://metaprinter.com)
+- [SuperLuckyKat on eBay](https://www.ebay.com/usr/superluckykat) 
 
-Built with the assistance of [Claude AI](https://claude.ai) by Anthropic.
+**Claude Sonnet 4.6 Adaptive** - an artificial inteligence on earth 
+
+- [Claude AI](https://claude.ai)
