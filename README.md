@@ -1,4 +1,4 @@
-# SuperLuckyKat — One Piece TCG No-Foil No-alt art Leader Tracker
+# SuperLuckyKat — No-Foil Leader Tracker
 
 **Live:** https://metaprinter.github.io/op-leader-tracker/
 
@@ -73,8 +73,10 @@ The app requires a one-time OAuth setup to enable Drive sync. Collection data is
 **4. Create OAuth Client ID**
 1. Go to **Google Auth Platform → Clients → + Create Client**
 2. Application type: **Web application**
-3. Authorized JavaScript origins: `https://metaprinter.github.io`
+3. Authorized JavaScript origins: add the URL where your app is hosted (e.g. `https://yourusername.github.io`)
 4. Copy the generated Client ID
+
+> **Note:** The Client ID is tied to the authorized origin you register. If you fork this repo and host it at a different URL, you must register that URL as an authorized origin in your own Google Cloud project — you cannot reuse the Client ID from this repo.
 
 **5. Add Client ID to the HTML**
 In `index.html`, find:
@@ -140,6 +142,10 @@ https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/{SET}/{CARD-ID}_E
 
 ## Built By
 
-SuperLuckyKat — One Piece TCG player, collector, and eBay reseller based in New Jersey.
+**Robert Ivan** — TCG player, collector, and eBay reseller
 
-eBay store: [SuperLuckyKat](https://www.ebay.com/usr/superluckykat)
+- [robertivan.com](https://robertivan.com)
+- [metaprinter.com](https://metaprinter.com) — aka Metaprinter
+- [SuperLuckyKat on eBay](https://www.ebay.com/usr/superluckykat) - aka the Trubish Bin 
+
+Built with the assistance of [Claude AI](https://claude.ai) by Anthropic.
