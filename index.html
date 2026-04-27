@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trubbish Bin — SuperLuckyKat Collection Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:          #0f1419;
+    --surface:     #1a2230;
+    --surface2:    #243040;
+    --border:      #2e3f55;
+    --accent:      #7de8a0;
+    --accent-glow: rgba(125,232,160,0.18);
+    --gold:        #ffc947;
+    --gold-glow:   rgba(255,201,71,0.18);
+    --red:         #ff6b6b;
+    --text:        #e8f0f8;
+    --text-muted:  #7a90a8;
+    --text-dim:    #4a607a;
+    --trub-body:   #7dce95;
+    --trub-dark:   #3fa860;
+    --trub-tie:    #2d8a4a;
+    --trub-cream:  #f5f0d8;
+    --trub-mouth:  #1a2230;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  /* ── Background texture ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(125,232,160,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(255,201,71,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 24px 32px;
+    text-align: center;
+    gap: 0;
+  }
+
+  /* ── Trubbish SVG mascot ── */
+  .trubbish-mascot {
+    width: 110px;
+    height: 130px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 8px 24px rgba(125,232,160,0.25));
+    animation: bob 3.2s ease-in-out infinite;
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50%       { transform: translateY(-7px) rotate(1deg); }
+  }
+
+  .brand-name {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.4rem, 6vw, 3.4rem);
+    letter-spacing: 0.01em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent) 0%, #b8f5ca 50%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .brand-sub {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .brand-sub span {
+    color: var(--gold);
+  }
+
+  /* ── Divider ── */
+  .divider {
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 28px auto;
+    border-radius: 2px;
+  }
+
+  /* ── Tools grid ── */
+  .tools-section {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 960px;
+    padding: 0 24px 80px;
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    padding-left: 2px;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── Tool tile ── */
+  .tool-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    cursor: default;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tool-tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .tool-tile.active {
+    cursor: pointer;
+  }
+
+  .tool-tile.active::before {
+    background: var(--accent-glow);
+  }
+
+  .tool-tile.active:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 32px rgba(125,232,160,0.12), 0 0 0 1px rgba(125,232,160,0.15);
+  }
+
+  .tool-tile.active:hover::before {
+    opacity: 1;
+  }
+
+  .tool-tile.coming-soon {
+    opacity: 0.55;
+  }
+
+  /* ── Tile header row ── */
+  .tile-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .tile-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .tile-icon.green  { background: rgba(125,232,160,0.12); }
+  .tile-icon.gold   { background: rgba(255,201,71,0.12); }
+  .tile-icon.blue   { background: rgba(96,165,250,0.12); }
+
+  .tile-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .badge-live {
+    background: rgba(125,232,160,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(125,232,160,0.3);
+  }
+
+  .badge-live::before {
+    content: '● ';
+    font-size: 0.55rem;
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  .badge-soon {
+    background: rgba(122,144,168,0.1);
+    color: var(--text-muted);
+    border: 1px solid rgba(122,144,168,0.2);
+  }
+
+  /* ── Tile content ── */
+  .tile-title {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .tile-desc {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  .tile-meta {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .meta-val {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .meta-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .tile-arrow {
+    position: absolute;
+    right: 22px;
+    bottom: 22px;
+    font-size: 1rem;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .tool-tile.active:hover .tile-arrow {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+
+  /* ── Footer ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    margin-top: auto;
+    padding: 20px 24px 32px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  footer a {
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  footer a:hover { color: var(--text-muted); }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .tools-grid { grid-template-columns: 1fr; }
+    header { padding: 40px 20px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <!-- Trubbish SVG Mascot -->
+  <svg class="trubbish-mascot" viewBox="0 0 110 130" xmlns="http://www.w3.org/2000/svg">
+    <!-- Shadow -->
+    <ellipse cx="55" cy="126" rx="30" ry="5" fill="rgba(0,0,0,0.25)"/>
+
+    <!-- Bag ruffle / spikes at tie -->
+    <g fill="#3fa860">
+      <polygon points="38,52 33,38 43,48"/>
+      <polygon points="50,48 47,33 54,46"/>
+      <polygon points="62,47 63,32 68,45"/>
+      <polygon points="73,50 77,37 80,49"/>
+    </g>
+
+    <!-- Tie knot top -->
+    <ellipse cx="55" cy="44" rx="20" ry="10" fill="#2d8a4a"/>
+    <ellipse cx="55" cy="41" rx="13" ry="7" fill="#3fa860"/>
+
+    <!-- Main bag body -->
+    <path d="M 16,70 Q 12,88 14,102 Q 18,122 55,124 Q 92,122 96,102 Q 98,88 94,70 Q 88,54 55,54 Q 22,54 16,70 Z" fill="#7dce95"/>
+
+    <!-- Body shading left -->
+    <path d="M 16,70 Q 12,92 16,108 Q 22,120 40,123 Q 22,112 20,95 Q 18,80 22,68 Z" fill="rgba(0,0,0,0.06)"/>
+
+    <!-- Body highlight right -->
+    <path d="M 80,56 Q 92,62 95,78 Q 90,60 78,57 Z" fill="rgba(255,255,255,0.12)"/>
+
+    <!-- Face patch (cream) -->
+    <ellipse cx="55" cy="89" rx="27" ry="22" fill="#f0eed8"/>
+
+    <!-- Eyes -->
+    <ellipse cx="44" cy="83" rx="7" ry="8.5" fill="white"/>
+    <ellipse cx="66" cy="83" rx="7" ry="8.5" fill="white"/>
+    <!-- Pupils -->
+    <circle cx="45" cy="84" r="4.5" fill="#1a1a2e"/>
+    <circle cx="67" cy="84" r="4.5" fill="#1a1a2e"/>
+    <!-- Eye shine -->
+    <circle cx="47" cy="82" r="1.5" fill="white"/>
+    <circle cx="69" cy="82" r="1.5" fill="white"/>
+
+    <!-- Mouth -->
+    <path d="M 43,97 Q 55,108 67,97" stroke="#1a1a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- Teeth -->
+    <rect x="49" y="97" width="5" height="4" rx="1" fill="white"/>
+    <rect x="56" y="97" width="5" height="4" rx="1" fill="white"/>
+
+    <!-- Cheek blush -->
+    <ellipse cx="36" cy="93" rx="5" ry="3" fill="rgba(255,160,160,0.35)"/>
+    <ellipse cx="74" cy="93" rx="5" ry="3" fill="rgba(255,160,160,0.35)"/>
+
+    <!-- Left arm stub -->
+    <ellipse cx="13" cy="88" rx="6" ry="9" fill="#6dc488" transform="rotate(-20,13,88)"/>
+    <!-- Right arm stub -->
+    <ellipse cx="97" cy="88" rx="6" ry="9" fill="#6dc488" transform="rotate(20,97,88)"/>
+
+    <!-- Bag wrinkle lines -->
+    <path d="M 30,75 Q 28,90 32,105" stroke="rgba(0,0,0,0.08)" stroke-width="1.5" fill="none"/>
+    <path d="M 78,73 Q 80,88 77,104" stroke="rgba(0,0,0,0.08)" stroke-width="1.5" fill="none"/>
+  </svg>
+
+  <div class="brand-name">Trubbish Bin</div>
+  <div class="brand-sub"><span>SuperLuckyKat</span> · Collection Hub</div>
+</header>
+
+<div class="divider"></div>
+
+<main class="tools-section">
+  <div class="section-label">Tools</div>
+  <div class="tools-grid">
+
+    <!-- 1. Leader Tracker — LIVE -->
+    <a class="tool-tile active" href="leader-tracker.html">
+      <div class="tile-top">
+        <div class="tile-icon green">🗺️</div>
+        <span class="tile-badge badge-live">Live</span>
+      </div>
+      <div>
+        <div class="tile-title">OP Leader Tracker</div>
+        <div class="tile-desc">Track your no-foil One Piece leader card collection across all sets. Qty steppers, condition grading, owned/missing tabs, TSV export.</div>
+      </div>
+      <div class="tile-meta">
+        <div class="meta-item">
+          <span class="meta-val">OP01–ST</span>
+          <span class="meta-label">Sets covered</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-val">Google</span>
+          <span class="meta-label">Sync</span>
+        </div>
+      </div>
+      <span class="tile-arrow">→</span>
+    </a>
+
+    <!-- 2. Nissay Playing Card Tracker — COMING SOON -->
+    <div class="tool-tile coming-soon">
+      <div class="tile-top">
+        <div class="tile-icon gold">🃏</div>
+        <span class="tile-badge badge-soon">Coming Soon</span>
+      </div>
+      <div>
+        <div class="tile-title">Nissay Playing Card Tracker</div>
+        <div class="tile-desc">Track the One Piece × Nissay Trump playing card set. Monitor suit completion across Spades, Hearts, Clubs, Diamonds — CGC submission planning.</div>
+      </div>
+      <div class="tile-meta">
+        <div class="meta-item">
+          <span class="meta-val">52 + Jokers</span>
+          <span class="meta-label">Cards</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-val">4 Suits</span>
+          <span class="meta-label">Sets</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Carddass Hyper Battle Tracker — COMING SOON -->
+    <div class="tool-tile coming-soon">
+      <div class="tile-top">
+        <div class="tile-icon blue">📦</div>
+        <span class="tile-badge badge-soon">Coming Soon</span>
+      </div>
+      <div>
+        <div class="tile-title">Carddass Hyper Battle</div>
+        <div class="tile-desc">1999 · 2000 · 2001 vintage Japanese Carddass sets. Track raw and graded copies, cost basis, CGC submission status, and want list.</div>
+      </div>
+      <div class="tile-meta">
+        <div class="meta-item">
+          <span class="meta-val">3 Sets</span>
+          <span class="meta-label">Years</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-val">CGC</span>
+          <span class="meta-label">Target Grade</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <p>Trubbish Bin · SuperLuckyKat · <a href="https://ebay.com/usr/superluckykat" target="_blank">eBay Store ↗</a></p>
+</footer>
+
+</body>
+</html>
