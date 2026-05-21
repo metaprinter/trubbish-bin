@@ -110,6 +110,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .st-toggle.excluded{background:var(--red-dim);border-color:var(--red);color:var(--red)}
 .st-toggle.included{background:rgba(39,232,153,.12);border-color:#27e899;color:#27e899}
 .empty{padding:60px 0;text-align:center;color:var(--muted);font-size:14px}
+.card.reprint{opacity:0.6;cursor:default}
+.card.reprint:hover{transform:none;box-shadow:none}
+.card.reprint.owned{border-color:rgba(145,150,168,.3);background:rgba(145,150,168,.04)}
+.card.reprint.owned:hover{border-color:rgba(145,150,168,.4);box-shadow:none}
+.reprint-badge{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:var(--muted2);font-family:'DM Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.5px;padding:2px 8px;border-radius:3px;white-space:nowrap}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--gold);border-radius:8px;padding:11px 18px;font-size:13px;color:var(--gold);opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:999}
 .toast.show{opacity:1;transform:none}
 .gaps-panel{padding:10px 24px 0;max-width:1440px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
@@ -167,7 +172,7 @@ Sign in with Google
 
 <div class="hdr-right">
 <span class="sync-label"><span class="sync-dot saved"></span><span id="syncLabel">Synced</span></span>
-<div class="stat-badge"><strong id="ownedCount">0</strong> / <span id="totalCount">330</span></div>
+<div class="stat-badge"><strong id="ownedCount">0</strong> / <span id="totalCount">0</span></div>
 <button class="hdr-btn export" id="exportBtn">Export TSV</button>
 <button class="hdr-btn" id="importBtn">Import TSV</button>
 <button class="hdr-btn sort-inactive" id="sortMissingBtn">Sort by Missing</button>
@@ -540,6 +545,481 @@ const SETS=[
     {id:'FP19',nm:'Nami\'s Survey Room'},
     {id:'FP20',nm:'Loguetown'},
   ]},
+  {key:'SIXTH',title:'Sixth Stage',sub:'Nov 2000',cards:[
+    {id:'C255',nm:'Luffy',r:'h'},
+    {id:'C256',nm:'Luffy'},
+    {id:'C257',nm:'Luffy'},
+    {id:'C258',nm:'Zoro'},
+    {id:'C259',nm:'Zoro'},
+    {id:'C260',nm:'Zoro'},
+    {id:'C261',nm:'Nami'},
+    {id:'C262',nm:'Nami'},
+    {id:'C263',nm:'Usopp'},
+    {id:'C264',nm:'Usopp'},
+    {id:'C265',nm:'Sanji'},
+    {id:'C266',nm:'Sanji'},
+    {id:'C267',nm:'Shanks'},
+    {id:'C268',nm:'Nojiko'},
+    {id:'C269',nm:'Bell-mère'},
+    {id:'C270',nm:'Apis'},
+    {id:'C271',nm:'Ryuuji'},
+    {id:'C272',nm:'Dragon'},
+    {id:'C273',nm:'Pudding Pudding'},
+    {id:'C274',nm:'Nezumi'},
+    {id:'C275',nm:'Brannew'},
+    {id:'C276',nm:'Smoker',r:'h'},
+    {id:'C277',nm:'Nelson Royale'},
+    {id:'C278',nm:'Marine HQ Forces'},
+    {id:'C279',nm:'Arlong'},
+    {id:'C280',nm:'Hatchan'},
+    {id:'C281',nm:'Kuroobi'},
+    {id:'C282',nm:'Chew'},
+    {id:'C283',nm:'Alvida'},
+    {id:'C284',nm:'Buggy'},
+    {id:'C285',nm:'Cabaji'},
+    {id:'C286',nm:'Richie Bike'},
+    {id:'C287',nm:'Eric'},
+    {id:'S57',nm:'Luffy Pirates',r:'h'},
+    {id:'S58',nm:'Luffy'},
+    {id:'S59',nm:'Zoro',r:'h'},
+    {id:'S60',nm:'Sanji',r:'h'},
+    {id:'S61',nm:'Dragon',r:'h'},
+    {id:'S62',nm:'Buggy'},
+    {id:'S63',nm:'Arlong'},
+    {id:'FP21',nm:'Pirate King\'s Execution Platform'},
+    {id:'FP22',nm:'Lost Island'},
+  ]},
+  {key:'GB3',title:'Grand Box 3',sub:'Dec 2000',cards:[
+    {id:'C288',nm:'Luffy',r:'g'},
+    {id:'C289',nm:'Luffy'},
+    {id:'C290',nm:'Luffy'},
+    {id:'C291',nm:'Zoro',r:'g'},
+    {id:'C292',nm:'Zoro'},
+    {id:'C293',nm:'Zoro'},
+    {id:'C294',nm:'Nami'},
+    {id:'C295',nm:'Nami'},
+    {id:'C296',nm:'Nami'},
+    {id:'C297',nm:'Usopp'},
+    {id:'C298',nm:'Usopp'},
+    {id:'C299',nm:'Usopp'},
+    {id:'C300',nm:'Sanji',r:'g'},
+    {id:'C301',nm:'Sanji'},
+    {id:'C302',nm:'Sanji'},
+    {id:'C303',nm:'Shanks'},
+    {id:'C304',nm:'Beckmann'},
+    {id:'C305',nm:'Lucky Roux'},
+    {id:'C306',nm:'Makino'},
+    {id:'C307',nm:'Yosaku & Johnny'},
+    {id:'C308',nm:'Bell-mère and Children'},
+    {id:'C309',nm:'Apis'},
+    {id:'C310',nm:'Ryuuji'},
+    {id:'C311',nm:'Bokuden'},
+    {id:'C312',nm:'Dragon'},
+    {id:'C313',nm:'Koby'},
+    {id:'C314',nm:'Helmeppo'},
+    {id:'C315',nm:'Smoker',r:'h'},
+    {id:'C316',nm:'Tashigi'},
+    {id:'C317',nm:'Nelson Royale'},
+    {id:'C318',nm:'Loguetown Garrison'},
+    {id:'C319',nm:'Royale Marine Corps.'},
+    {id:'C320',nm:'Arlong'},
+    {id:'C321',nm:'Hatchan'},
+    {id:'C322',nm:'Kuroobi'},
+    {id:'C323',nm:'Chew'},
+    {id:'C324',nm:'Alvida'},
+    {id:'C325',nm:'Buggy'},
+    {id:'C326',nm:'Cabaji & Mohji'},
+    {id:'C327',nm:'Richie'},
+    {id:'C328',nm:'Eric'},
+    {id:'C329',nm:'Bat'},
+    {id:'C330',nm:'Captain Joke'},
+    {id:'S64',nm:'Luffy Pirates',r:'h'},
+    {id:'S65',nm:'Luffy'},
+    {id:'S66',nm:'Zoro'},
+    {id:'S67',nm:'Apis',r:'h'},
+    {id:'S68',nm:'Smoker'},
+    {id:'S69',nm:'Tashigi'},
+    {id:'S70',nm:'Arlong'},
+    {id:'S71',nm:'Alvida'},
+    {id:'S72',nm:'Buggy'},
+    {id:'S73',nm:'Eric'},
+    {id:'S74',nm:'Captain Roger'},
+    {id:'FP23',nm:'Gosa Village'},
+    {id:'FP24',nm:'Freedom Banquet'},
+    {id:'FP25',nm:'Town Full of Monsters'},
+    {id:'FP26',nm:'Warship Island'},
+    {id:'FP27',nm:'Arlong\'s Pirate Ship'},
+    {id:'FP28',nm:'Merry Meal'},
+  ]},
+  {key:'SEVENTH',title:'Seventh Stage',sub:'Feb 2001',cards:[
+    {id:'C331',nm:'Luffy'},
+    {id:'C332',nm:'Luffy'},
+    {id:'C333',nm:'Zoro'},
+    {id:'C334',nm:'Zoro'},
+    {id:'C335',nm:'Zoro'},
+    {id:'C336',nm:'Nami'},
+    {id:'C337',nm:'Nami'},
+    {id:'C338',nm:'Log Pose'},
+    {id:'C339',nm:'Usopp'},
+    {id:'C340',nm:'Usopp'},
+    {id:'C341',nm:'Sanji',r:'h'},
+    {id:'C342',nm:'Sanji'},
+    {id:'C343',nm:'Sanji'},
+    {id:'C344',nm:'Carmen'},
+    {id:'C345',nm:'Apis'},
+    {id:'C346',nm:'Borodo'},
+    {id:'C347',nm:'Akisu'},
+    {id:'C348',nm:'Crocus'},
+    {id:'C349',nm:'Laboon',r:'h'},
+    {id:'C350',nm:'Smoker'},
+    {id:'C351',nm:'Tashigi'},
+    {id:'C352',nm:'Den Den Mushi'},
+    {id:'C353',nm:'Daddy'},
+    {id:'C354',nm:'Buggy & Alvida'},
+    {id:'C355',nm:'Eric'},
+    {id:'C356',nm:'Captain Joke'},
+    {id:'C357',nm:'Bear King',r:'h'},
+    {id:'C358',nm:'Pin Joker'},
+    {id:'C359',nm:'Skunk One'},
+    {id:'C360',nm:'Honey Queen'},
+    {id:'C361',nm:'Boo Jack'},
+    {id:'C362',nm:'Mr. 9',r:'h'},
+    {id:'C363',nm:'Miss Wednesday',r:'h'},
+    {id:'C364',nm:'Luffy Pirates'},
+    {id:'S75',nm:'Luffy Pirates',r:'h'},
+    {id:'S76',nm:'Luffy',r:'h'},
+    {id:'S77',nm:'Usopp'},
+    {id:'S78',nm:'Ryuuji'},
+    {id:'S79',nm:'Laboon'},
+    {id:'S80',nm:'Bear King'},
+    {id:'S81',nm:'Unluckies'},
+    {id:'FP29',nm:'Clockwork Island'},
+    {id:'FP30',nm:'Reverse Mountain'},
+  ]},
+  {key:'GB4',title:'Grand Box 4',sub:'Apr 2001',cards:[
+    {id:'C365',nm:'Luffy',r:'h'},
+    {id:'C366',nm:'Luffy'},
+    {id:'C367',nm:'Zoro'},
+    {id:'C368',nm:'Zoro'},
+    {id:'C369',nm:'Nami'},
+    {id:'C370',nm:'Nami'},
+    {id:'C371',nm:'Usopp'},
+    {id:'C372',nm:'Usopp'},
+    {id:'C373',nm:'Sanji'},
+    {id:'C374',nm:'Sanji'},
+    {id:'C375',nm:'Shanks'},
+    {id:'C376',nm:'Apis'},
+    {id:'C377',nm:'Ryuuji'},
+    {id:'C378',nm:'Crocus & Laboon'},
+    {id:'C379',nm:'Crocus'},
+    {id:'C380',nm:'Laboon'},
+    {id:'C381',nm:'Vivi'},
+    {id:'C382',nm:'Karoo'},
+    {id:'C383',nm:'Guardians of the City'},
+    {id:'C384',nm:'Pin Joker'},
+    {id:'C385',nm:'Skunk One'},
+    {id:'C386',nm:'Honey Queen'},
+    {id:'C387',nm:'Boo Jack'},
+    {id:'C388',nm:'King Cannon'},
+    {id:'C389',nm:'Mr. 5',r:'g'},
+    {id:'C390',nm:'Mr. 8'},
+    {id:'C391',nm:'Mr. 9'},
+    {id:'C392',nm:'Mr. 9'},
+    {id:'C393',nm:'Miss Valentine',r:'g'},
+    {id:'C394',nm:'Miss Monday'},
+    {id:'C395',nm:'Miss Wednesday'},
+    {id:'C396',nm:'Metal Bat'},
+    {id:'C397',nm:'Peacock Slicer'},
+    {id:'S82',nm:'Luffy Pirates',r:'h'},
+    {id:'S83',nm:'Bear King Gang'},
+    {id:'S84',nm:'Luffy & Zoro',r:'g'},
+    {id:'S85',nm:'Apis & Bokuden'},
+    {id:'S86',nm:'Eric & Nelson'},
+    {id:'S87',nm:'Agents'},
+    {id:'S88',nm:'Luffy'},
+    {id:'S89',nm:'Zoro',r:'h'},
+    {id:'S90',nm:'Borodo'},
+    {id:'S91',nm:'Akisu'},
+    {id:'S92',nm:'Clockwork Island Residents'},
+    {id:'S93',nm:'Bear King'},
+    {id:'H01',nm:'Martial Arts'},
+    {id:'H02',nm:'Assistance'},
+    {id:'H03',nm:'Obliteration Order'},
+    {id:'H04',nm:'Maneuverability'},
+    {id:'H05',nm:'Pacifistic Defense'},
+    {id:'H06',nm:'Fighting Spirit'},
+    {id:'H07',nm:'Three Sword Style'},
+    {id:'H08',nm:'Stampede'},
+    {id:'H09',nm:'Forceful Seizure'},
+    {id:'FP31',nm:'Logue Town Tempest'},
+    {id:'FP32',nm:'Lost Island Battleground'},
+    {id:'FP33',nm:'Royale Armada'},
+    {id:'FP34',nm:'Sea King Nest'},
+    {id:'FP35',nm:'Trump Castle'},
+    {id:'FP36',nm:'Whiskey Peak'},
+  ]},
+  {key:'GLC1',title:'Grand Line Compilation 1',sub:'Jun 2001',cards:[
+    {id:'C398',nm:'Luffy',r:'h'},
+    {id:'C399',nm:'Luffy'},
+    {id:'C400',nm:'Luffy'},
+    {id:'C401',nm:'Zoro',r:'h'},
+    {id:'C402',nm:'Zoro'},
+    {id:'C403',nm:'Nami'},
+    {id:'C404',nm:'Nami'},
+    {id:'C405',nm:'Usopp'},
+    {id:'C406',nm:'Usopp'},
+    {id:'C407',nm:'Sanji'},
+    {id:'C408',nm:'Sanji'},
+    {id:'C409',nm:'Crocus'},
+    {id:'C410',nm:'Laboon'},
+    {id:'C411',nm:'Vivi'},
+    {id:'C412',nm:'Karoo'},
+    {id:'C413',nm:'Koby'},
+    {id:'C414',nm:'Helmeppo'},
+    {id:'C415',nm:'Dorry & Brogy'},
+    {id:'C416',nm:'Brogy'},
+    {id:'C417',nm:'Dorry'},
+    {id:'C418',nm:'Mr. 3',r:'h'},
+    {id:'C419',nm:'Mr. 3'},
+    {id:'C420',nm:'Mr. 8'},
+    {id:'C421',nm:'Mr. 8'},
+    {id:'C422',nm:'Miss Goldenweek'},
+    {id:'C423',nm:'Miss Goldenweek'},
+    {id:'C424',nm:'Miss Valentine'},
+    {id:'C425',nm:'Miss Monday'},
+    {id:'C426',nm:'Mr. 9 & Miss Wednesday'},
+    {id:'C427',nm:'Millions'},
+    {id:'S94',nm:'Luffy Pirates'},
+    {id:'S95',nm:'Agents'},
+    {id:'S96',nm:'Luffy & Zoro'},
+    {id:'S97',nm:'Zoro & Sanji',r:'h'},
+    {id:'S98',nm:'Nami'},
+    {id:'S99',nm:'Mr. 9'},
+    {id:'S100',nm:'Miss All Sunday',r:'h'},
+    {id:'H10',nm:'The Long Road Ahead',r:'h'},
+    {id:'H11',nm:'Warrior Nation',r:'h'},
+    {id:'H12',nm:'Foresight'},
+    {id:'H13',nm:'Outright Lie'},
+    {id:'H14',nm:'Extraordinary People'},
+    {id:'H15',nm:'Organization\'s Strength'},
+  ]},
+  {key:'GLC2',title:'Grand Line Compilation 2',sub:'Aug 2001',cards:[
+    {id:'C428',nm:'Luffy',r:'h'},
+    {id:'C429',nm:'Zoro',r:'h'},
+    {id:'C430',nm:'Zoro'},
+    {id:'C431',nm:'Nami'},
+    {id:'C432',nm:'Nami'},
+    {id:'C433',nm:'Usopp'},
+    {id:'C434',nm:'Sanji'},
+    {id:'C435',nm:'Chopper'},
+    {id:'C436',nm:'Chopper'},
+    {id:'C437',nm:'Vivi'},
+    {id:'C438',nm:'Karoo'},
+    {id:'C439',nm:'Brogy'},
+    {id:'C440',nm:'Dorry'},
+    {id:'C441',nm:'Dr. Kureha',r:'h'},
+    {id:'C442',nm:'Dalton'},
+    {id:'C443',nm:'Dalton'},
+    {id:'C444',nm:'Negikuma Maria'},
+    {id:'C445',nm:'Koby'},
+    {id:'C446',nm:'Helmeppo'},
+    {id:'C447',nm:'Wapol'},
+    {id:'C448',nm:'Chess'},
+    {id:'C449',nm:'Kuromarimo'},
+    {id:'C450',nm:'Mr. 3'},
+    {id:'C451',nm:'Mr. 3'},
+    {id:'C452',nm:'Mr. 5'},
+    {id:'C453',nm:'Miss Goldenweek'},
+    {id:'C454',nm:'Miss Valentine'},
+    {id:'C455',nm:'Lapahn'},
+    {id:'C456',nm:'Luffy Pirates'},
+    {id:'S101',nm:'Luffy Pirates',r:'h'},
+    {id:'S102',nm:'Luffy'},
+    {id:'S103',nm:'Sanji',r:'h'},
+    {id:'S104',nm:'Chopper'},
+    {id:'S105',nm:'Garp'},
+    {id:'S106',nm:'Mr. 2'},
+    {id:'S107',nm:'Miss All Sunday'},
+    {id:'H16',nm:'Superdreadnought'},
+    {id:'H17',nm:'Continuous Assault'},
+    {id:'H18',nm:'Complete Recovery',r:'h'},
+    {id:'H19',nm:'High Speed'},
+    {id:'H20',nm:'Assault Command'},
+    {id:'H21',nm:'Aggression'},
+  ]},
+  {key:'GB5',title:'Grand Box 5',sub:'Oct 2001',cards:[
+    {id:'C457',nm:'Luffy',r:'h'},
+    {id:'C458',nm:'Luffy'},
+    {id:'C459',nm:'Zoro'},
+    {id:'C460',nm:'Zoro'},
+    {id:'C461',nm:'Nami'},
+    {id:'C462',nm:'Nami'},
+    {id:'C463',nm:'Usopp'},
+    {id:'C464',nm:'Usopp'},
+    {id:'C465',nm:'Sanji'},
+    {id:'C466',nm:'Sanji'},
+    {id:'C467',nm:'Chopper',r:'g'},
+    {id:'C468',nm:'Rumble Ball'},
+    {id:'C469',nm:'Amiudake'},
+    {id:'C470',nm:'Vivi'},
+    {id:'C471',nm:'Karoo'},
+    {id:'C472',nm:'Dorry & Brogy'},
+    {id:'C473',nm:'Brogy'},
+    {id:'C474',nm:'Dorry'},
+    {id:'C475',nm:'Dr. Kureha'},
+    {id:'C476',nm:'Dr. Hiriluk'},
+    {id:'C477',nm:'Cure-All Medicine'},
+    {id:'C478',nm:'Dalton'},
+    {id:'C479',nm:'Dalton'},
+    {id:'C480',nm:'Wapol'},
+    {id:'C481',nm:'Wapol'},
+    {id:'C482',nm:'Chess'},
+    {id:'C483',nm:'Kuromarimo'},
+    {id:'C484',nm:'Mr. 3'},
+    {id:'C485',nm:'Mr. 5'},
+    {id:'C486',nm:'Miss Goldenweek'},
+    {id:'C487',nm:'Island Eater'},
+    {id:'C488',nm:'Bliking Pirates'},
+    {id:'C489',nm:'Luffy Pirates',r:'h'},
+    {id:'S108',nm:'Luffy Pirates',r:'h'},
+    {id:'S109',nm:'Nami & Vivi'},
+    {id:'S110',nm:'Luffy',r:'g'},
+    {id:'S111',nm:'Chopper'},
+    {id:'S112',nm:'Chopper'},
+    {id:'S113',nm:'Chopper'},
+    {id:'S114',nm:'Chopper'},
+    {id:'S115',nm:'Chopper'},
+    {id:'S116',nm:'Crocodile',r:'g'},
+    {id:'S117',nm:'Mr. 3'},
+    {id:'S118',nm:'Wapol'},
+    {id:'S119',nm:'Unluckies'},
+    {id:'H22',nm:'Armee de L\'Air Gomu Shot'},
+    {id:'H23',nm:'Kokutei Roseo'},
+    {id:'H24',nm:'Quatro Axes'},
+    {id:'H25',nm:'Extraordinary Battle'},
+    {id:'H26',nm:'Conspiracy'},
+    {id:'H27',nm:'Misrule'},
+    {id:'H28',nm:'Blood of a Warrior'},
+    {id:'H29',nm:'Brain Play'},
+    {id:'H30',nm:'Tool Master'},
+    {id:'FP37',nm:'Mr. 3\'s Villa'},
+    {id:'FP38',nm:'Cyclone'},
+    {id:'FP39',nm:'Bliking Ship'},
+    {id:'FP40',nm:'Behind the Scenes of the National Theft'},
+    {id:'FP41',nm:'Drum Castle'},
+    {id:'FP42',nm:'Hiruluk\'s Sakura'},
+  ]},
+  {key:'GLC3',title:'Grand Line Compilation 3',sub:'Nov 2001',cards:[
+    {id:'C490',nm:'Luffy'},
+    {id:'C491',nm:'Luffy'},
+    {id:'C492',nm:'Zoro',r:'h'},
+    {id:'C493',nm:'Nami'},
+    {id:'C494',nm:'Usopp'},
+    {id:'C495',nm:'Usopp'},
+    {id:'C496',nm:'Sanji'},
+    {id:'C497',nm:'Chopper',r:'h'},
+    {id:'C498',nm:'Chopper'},
+    {id:'C499',nm:'Zoro & Sanji'},
+    {id:'C500',nm:'Vivi'},
+    {id:'C501',nm:'Dalton'},
+    {id:'C502',nm:'Dalton'},
+    {id:'C503',nm:'Dr. Kureha'},
+    {id:'C504',nm:'Dr. Hiriluk'},
+    {id:'C505',nm:'Smoker'},
+    {id:'C506',nm:'Tashigi'},
+    {id:'C507',nm:'Crocodile',r:'h'},
+    {id:'C508',nm:'Mr. 2'},
+    {id:'C509',nm:'Wapol'},
+    {id:'C510',nm:'Bliking Cannon'},
+    {id:'C511',nm:'Chess'},
+    {id:'C512',nm:'Kuromarimo'},
+    {id:'C513',nm:'Ace',r:'h'},
+    {id:'C514',nm:'Hiking Bear'},
+    {id:'C515',nm:'Isshi-20'},
+    {id:'C516',nm:'Luffy & Chopper'},
+    {id:'C517',nm:'Luffy and Friends 1'},
+    {id:'C518',nm:'Luffy and Friends 2'},
+    {id:'C519',nm:'Luffy and Friends 3'},
+    {id:'S120',nm:'Luffy Pirates',r:'h'},
+    {id:'S121',nm:'Luffy'},
+    {id:'S122',nm:'Nami'},
+    {id:'S123',nm:'Sanji',r:'h'},
+    {id:'S124',nm:'Mr. 2'},
+    {id:'S125',nm:'Wapol'},
+    {id:'S126',nm:'Cobra'},
+    {id:'H31',nm:'Set Sail!'},
+    {id:'H32',nm:'Single Combat'},
+    {id:'H33',nm:'Skilled Leader'},
+    {id:'H34',nm:'Invisible Adversary'},
+    {id:'H35',nm:'Edict'},
+  ]},
+  {key:'GBDX',title:'Grand Box DX',sub:'Dec 2001 • Luffy Pirates Vs Baroque Works',cards:[
+    {id:'C520',nm:'Luffy',r:'h'},
+    {id:'C521',nm:'Zoro'},
+    {id:'C522',nm:'Zoro'},
+    {id:'C523',nm:'Nami'},
+    {id:'C524',nm:'Usopp'},
+    {id:'C525',nm:'Usopp'},
+    {id:'C526',nm:'Sanji'},
+    {id:'C527',nm:'Sanji'},
+    {id:'C528',nm:'Chopper'},
+    {id:'C529',nm:'Chopper'},
+    {id:'C530',nm:'Vivi'},
+    {id:'C531',nm:'Ace',r:'h'},
+    {id:'C532',nm:'Luffy Pirates'},
+    {id:'C533',nm:'Luffy Pirates'},
+    {id:'C400',nm:'Luffy',rp:true},
+    {id:'C402',nm:'Zoro',rp:true},
+    {id:'C403',nm:'Nami',rp:true},
+    {id:'C405',nm:'Usopp',rp:true},
+    {id:'C407',nm:'Sanji',rp:true},
+    {id:'C411',nm:'Vivi',rp:true},
+    {id:'S127',nm:'Luffy Pirates',r:'h'},
+    {id:'S128',nm:'Luffy'},
+    {id:'S129',nm:'Nami'},
+    {id:'S130',nm:'Sanji'},
+    {id:'S131',nm:'Chopper'},
+    {id:'H36',nm:'Final Battle'},
+    {id:'H37',nm:'Extreme Situation'},
+    {id:'H38',nm:'Last Hope'},
+    {id:'FP43',nm:'Nanohana Harbour'},
+    {id:'FP44',nm:'The Little Great Pirate Ship'},
+    {id:'FP31',nm:'Logue Town Tempest',rp:true},
+    {id:'C534',nm:'Crocodile',r:'h'},
+    {id:'C535',nm:'Mr. 1',r:'h'},
+    {id:'C536',nm:'Mr. 2'},
+    {id:'C537',nm:'Mr. 3'},
+    {id:'C538',nm:'Mr. 4'},
+    {id:'C539',nm:'Mr. 5'},
+    {id:'C540',nm:'Mr. 8'},
+    {id:'C541',nm:'Miss All Sunday'},
+    {id:'C542',nm:'Miss Double Finger'},
+    {id:'C543',nm:'Miss Goldenweek'},
+    {id:'C544',nm:'Miss Merry Christmas'},
+    {id:'C545',nm:'Miss Wednesday'},
+    {id:'C546',nm:'Banchi'},
+    {id:'C419',nm:'Mr. 3',rp:true},
+    {id:'C420',nm:'Mr. 8',rp:true},
+    {id:'C423',nm:'Miss Goldenweek',rp:true},
+    {id:'C424',nm:'Miss Valentine',rp:true},
+    {id:'C425',nm:'Miss Monday',rp:true},
+    {id:'C426',nm:'Mr. 9 & Miss Wednesday',rp:true},
+    {id:'S132',nm:'Agents',r:'h'},
+    {id:'S133',nm:'Mr. 3'},
+    {id:'S134',nm:'Paula'},
+    {id:'S135',nm:'Miss Goldenweek'},
+    {id:'S136',nm:'Miss Monday'},
+    {id:'S137',nm:'Unluckies'},
+    {id:'S94',nm:'Luffy Pirates',rp:true},
+    {id:'S95',nm:'Agents',rp:true},
+    {id:'H39',nm:'Use of Force'},
+    {id:'H40',nm:'Agitation'},
+    {id:'H12',nm:'Foresight',rp:true},
+    {id:'H15',nm:'Organization\'s Strength',rp:true},
+    {id:'FP45',nm:'Spider\'s Cafe'},
+    {id:'FP46',nm:'Million\'s Fleet'},
+    {id:'FP36',nm:'Whiskey Peak',rp:true},
+  ]},
 ];
 
 const DRIVE='https://www.googleapis.com/drive/v3';
@@ -761,8 +1241,8 @@ function render(){
   let sortedSets=SETS.slice();
   if(sortByMissing){
     sortedSets.sort((a,b)=>{
-      const aMiss=a.cards.filter(c=>!data[c.id]).length;
-      const bMiss=b.cards.filter(c=>!data[c.id]).length;
+      const aMiss=a.cards.filter(c=>!c.rp&&!data[c.id]).length;
+      const bMiss=b.cards.filter(c=>!c.rp&&!data[c.id]).length;
       if(aMiss===0&&bMiss>0)return 1;
       if(bMiss===0&&aMiss>0)return -1;
       return bMiss-aMiss;
@@ -776,8 +1256,8 @@ function render(){
     const setCards=filtered.filter(c=>c.set===s.key);
     if(setCards.length===0&&activeTab!=='all')return;
 
-    const owned=s.cards.filter(c=>data[c.id]).length;
-    const total=s.cards.length;
+    const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
+    const total=s.cards.filter(c=>!c.rp).length;
     const pct=total>0?Math.round((owned/total)*100):0;
     const isExcluded=excludedSets[s.key];
 
@@ -808,18 +1288,20 @@ function render(){
     grid.className='card-grid';
 
     setCards.forEach(c=>{
+      const isReprint=!!c.rp;
       const d=data[c.id]||{};
-      const isOwned=!!d.qty;
+      const isOwned=isReprint?!!d.qty:!!d.qty;
       const card=document.createElement('div');
-      card.className='card'+(isOwned?' owned':'');
+      card.className='card'+(isOwned?' owned':'')+(isReprint?' reprint':'');
       const rarity=c.r==='h'?'holo':c.r==='g'?'gold':'regular';
       const rarityLabel=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
 
       card.innerHTML=`
 <div class="card-img-wrap">
-<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading')" class="loading">
+<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading')" onerror="this.onerror=null;this.src='assets/cards/CarddassHB.jpeg';" class="loading">
 <div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
 <div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+${isReprint?'<div class="reprint-badge">REPRINT</div>':''}
 </div>
 <div class="card-body">
 <div class="card-meta">
@@ -827,7 +1309,7 @@ function render(){
 <span class="rarity-tag ${rarity}">${rarityLabel}</span>
 </div>
 <div class="card-name">${c.nm}</div>
-<div class="card-detail">
+${isReprint?'':`<div class="card-detail">
 <div class="qty-row">
 <span class="qty-label">Qty</span>
 <div class="qty-ctrl">
@@ -849,11 +1331,11 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
 </div>`:''}
 </div>
 <button class="remove-btn" data-id="${c.id}">Remove</button>
-</div>
+</div>`}
 </div>
 `;
 
-      if(!isOwned){
+      if(!isReprint&&!isOwned){
         card.onclick=()=>{
           if(!data[c.id])data[c.id]={qty:1,cond:['NM']};
           scheduleSave();
@@ -936,6 +1418,7 @@ function updateStats(){
   SETS.forEach(s=>{
     if(excludedSets[s.key])return;
     s.cards.forEach(c=>{
+      if(c.rp)return;
       totalCards++;
       if(data[c.id])ownedCards++;
     });
@@ -949,7 +1432,7 @@ function updateGaps(){
   const gaps=[];
   SETS.forEach(s=>{
     if(excludedSets[s.key])return;
-    const missing=s.cards.filter(c=>!data[c.id]).length;
+    const missing=s.cards.filter(c=>!c.rp&&!data[c.id]).length;
     if(missing>0)gaps.push({set:s.key,title:s.title,count:missing});
   });
   if(gaps.length===0){
@@ -986,6 +1469,7 @@ document.getElementById('exportBtn').onclick=()=>{
   const rows=[['Card ID','Card Name','Set','Rarity','Qty','Condition','Grader','Grade','Notes'].join('\t')];
   SETS.forEach(s=>{
     s.cards.forEach(c=>{
+      if(c.rp)return;
       const d=data[c.id];
       if(!d)return;
       const rarity=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
