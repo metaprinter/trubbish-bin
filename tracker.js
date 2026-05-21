@@ -188,11 +188,11 @@ function render(){
       const rarityLabel=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
 
       const rot=d.rot||0;
-      const rotStyle=rot?`transform:rotate(${rot}deg) scale(${rot%180===0?1:1.46});`:'';
+      const rotStyle=rot?`transform:rotate(${rot}deg);`:'';
 
       card.innerHTML=`
 <div class="card-img-wrap">
-<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" style="${rotStyle}" onload="this.classList.remove('loading')" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
+<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" style="${rotStyle}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
 <div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
 <div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
 <button class="rot-btn" data-id="${c.id}" title="Rotate 90°">↻</button>
