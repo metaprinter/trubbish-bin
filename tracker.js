@@ -187,15 +187,11 @@ function render(){
       const rarity=c.r==='h'?'holo':c.r==='g'?'gold':'regular';
       const rarityLabel=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
 
-      const rot=d.rot||0;
-      const rotStyle=rot?`transform:rotate(${rot}deg);`:'';
-
       card.innerHTML=`
-<div class="card-img-wrap${rot?' rotated':''}">
-<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" style="${rotStyle}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
+<div class="card-img-wrap">
+<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
 <div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
 <div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-<button class="rot-btn" data-id="${c.id}" title="Rotate 90°">↻</button>
 ${isReprint?'<div class="reprint-badge">REPRINT</div>':''}
 </div>
 <div class="card-body">
@@ -232,9 +228,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
 
       if(!isReprint&&!isOwned){
         card.onclick=()=>{
-          if(!data[c.id])data[c.id]={};
-          data[c.id].qty=1;
-          if(!data[c.id].cond||data[c.id].cond.length===0)data[c.id].cond=['NM'];
+          if(!data[c.id])data[c.id]={qty:1,cond:['NM']};
           scheduleSave();
           render();
         };
@@ -299,30 +293,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     btn.onclick=(e)=>{
       e.stopPropagation();
       const id=btn.dataset.id;
-      const rot=data[id]&&data[id].rot;
-      if(rot){
-        data[id]={rot};
-      }else{
-        delete data[id];
-      }
-      scheduleSave();
-      render();
-    };
-  });
-
-  // Bind rotate buttons
-  document.querySelectorAll('.rot-btn').forEach(btn=>{
-    btn.onclick=(e)=>{
-      e.stopPropagation();
-      e.preventDefault();
-      const id=btn.dataset.id;
-      if(!data[id])data[id]={qty:0,cond:[]};
-      data[id].rot=((data[id].rot||0)+90)%360;
-      if(data[id].rot===0)delete data[id].rot;
-      // Clean up entries that only have rot=0 and no qty
-      if(!data[id].qty&&!data[id].rot){
-        delete data[id];
-      }
+      delete data[id];
       scheduleSave();
       render();
     };
