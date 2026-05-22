@@ -91,7 +91,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .card-img-wrap img.loading{opacity:0}
 .img-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-align:center;padding:10px}
 .img-ph-id{font-size:11px;font-weight:500;color:var(--muted2)}
-.owned-check{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;background:var(--red);border:2px solid var(--bg);display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(232,39,43,.5)}
+.owned-check{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;background:#22c55e;border:2px solid var(--bg);display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(34,197,94,.5)}
 .card.owned .owned-check{display:flex}
 .owned-check svg{width:12px;height:12px;color:#fff}
 
