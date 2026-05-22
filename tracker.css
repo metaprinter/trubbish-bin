@@ -79,7 +79,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .progress-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;min-width:52px;text-align:right}
 
 /* ── Card grid ── */
-.card-grid{display:grid;grid-template-columns:repeat(5,var(--card-w));gap:12px}
+.card-grid{display:grid;grid-template-columns:repeat(6,var(--card-w));gap:12px}
 .card{width:var(--card-w);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .15s;position:relative}
 .card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .card.owned{border-color:rgba(232,39,43,.45);background:rgba(232,39,43,.04);cursor:default}
@@ -155,6 +155,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .gaps-panel-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;flex-shrink:0}
 
 /* ── Responsive ── */
+@media(max-width:1380px){.card-grid{grid-template-columns:repeat(5,var(--card-w))}}
 @media(max-width:1100px){.card-grid{grid-template-columns:repeat(4,var(--card-w))}}
 @media(max-width:880px){.card-grid{grid-template-columns:repeat(3,var(--card-w))}}
 @media(max-width:640px){
