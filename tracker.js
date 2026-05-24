@@ -41,8 +41,8 @@ function showAuthError(msg){
 
 // ── Token Refresh ──
 
-const TOKEN_LIFETIME=3600*1000;   // Google tokens last 1 hour
-const REFRESH_BEFORE=600*1000;    // refresh 10 min before expiry (at 50 min)
+const TOKEN_LIFETIME=3600*1000;   /* Google tokens last 1 hour */
+const REFRESH_BEFORE=600*1000;    /* refresh 10 min before expiry (at 50 min) */
 
 function isTokenStale(){
   return Date.now()-tokenTimestamp>TOKEN_LIFETIME-REFRESH_BEFORE;
@@ -86,7 +86,7 @@ function startTokenRefreshTimer(){
     if(isTokenStale()){
       await silentRefresh();
     }
-  },5*60*1000); // check every 5 min
+  },5*60*1000); /* check every 5 min */
 }
 
 // ── Drive Sync ──
@@ -95,7 +95,7 @@ async function driveRequest(url,opts={}){
   await ensureFreshToken();
   const makeHeaders=()=>({...opts.headers,'Authorization':'Bearer '+accessToken});
   let r=await fetch(url,{...opts,headers:makeHeaders()});
-  // Retry once on auth failure
+  /* Retry once on auth failure */
   if(r.status===401||r.status===403){
     console.warn('Drive auth failed ('+r.status+'), attempting refresh…');
     const ok=await silentRefresh();
@@ -185,13 +185,13 @@ function scheduleSave(){
 function setSyncState(state){
   const dot=document.querySelector('.sync-dot');
   const label=document.getElementById('syncLabel');
+  if(!dot || !label) return;
   dot.className='sync-dot '+state;
   if(state!=='error'){
     label.textContent=state==='syncing'?'Saving…':'Synced';
     label.style.cursor='';
     label.onclick=null;
   }else if(!label.onclick){
-    // Only set generic error if showSessionExpired hasn't set a click handler
     label.textContent='Sync error';
   }
 }
@@ -225,6 +225,29 @@ function render(){
     });
   }
 
+  // ── Render Sidebar Navigation Automatically ──
+  const navContainer = document.getElementById('sidebarNav');
+  if(navContainer) {
+    let navHtml = '';
+    sortedSets.forEach(s => {
+      const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
+      const total=s.cards.filter(c=>!c.rp).length;
+      const pct=total>0?Math.round((owned/total)*100):0;
+      const isExcluded=excludedSets[s.key];
+      
+      navHtml += `
+        <div class="nav-set ${isExcluded?'nav-excluded':''}" data-key="${s.key}" onclick="scrollToSet('${s.key}')">
+          <span class="nav-name">${s.title}</span>
+          <div class="nav-meta-row">
+            <span class="nav-count">${owned}/${total}</span>
+            <div class="nav-pip"><div class="nav-pip-fill" style="width: ${pct}%"></div></div>
+          </div>
+        </div>
+      `;
+    });
+    navContainer.innerHTML = navHtml;
+  }
+
   const main=document.getElementById('main');
   main.innerHTML='';
 
@@ -239,6 +262,7 @@ function render(){
 
     const group=document.createElement('div');
     group.className='set-group'+(isExcluded?' excluded':'');
+    group.id = 'set-' + s.key;
 
     const hdr=document.createElement('div');
     hdr.className='set-header';
@@ -246,10 +270,6 @@ function render(){
 <div>
 <div class="set-title">${s.title}</div>
 <div class="set-sub">${s.sub} • ${total} cards</div>
-</div>
-<div class="set-progress">
-<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-<div class="progress-pct">${owned}/${total} (${pct}%)</div>
 </div>
 <button class="st-toggle ${isExcluded?'excluded':'included'}">${isExcluded?'EXCL':'INCL'}</button>
 `;
@@ -327,7 +347,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     main.appendChild(group);
   });
 
-  // Bind qty buttons
+  /* Bind qty buttons */
   document.querySelectorAll('.qty-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
@@ -341,7 +361,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     };
   });
 
-  // Bind pills (condition, grader, grade)
+  /* Bind pills (condition, grader, grade) */
   document.querySelectorAll('.pill').forEach(pill=>{
     pill.onclick=(e)=>{
       e.stopPropagation();
@@ -373,7 +393,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     };
   });
 
-  // Bind remove buttons
+  /* Bind remove buttons */
   document.querySelectorAll('.remove-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
@@ -386,6 +406,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
 
   updateStats();
   updateGaps();
+  updateActiveNavHighlight();
 }
 
 // ── Stats & Gaps ──
@@ -418,8 +439,48 @@ function updateGaps(){
     return;
   }
   panel.innerHTML='<span class="gaps-panel-label">Missing:</span>'+gaps.map(g=>
-    `<a href="#${g.set}" class="gap-chip"><span class="gap-label">${g.title}</span> <span class="gap-count">${g.count}</span></a>`
+    `<a href="#set-${g.set}" onclick="event.preventDefault(); scrollToSet('${g.set}')" class="gap-chip"><span class="gap-label">${g.title}</span> <span class="gap-count">${g.count}</span></a>`
   ).join('');
+}
+
+// ── Sidebar Interactivity Mechanics ──
+
+function scrollToSet(key) {
+  document.getElementById('set-' + key)?.scrollIntoView({behavior:'smooth', block:'start'});
+  closeSidebar();
+  highlightNav(key);
+}
+
+function highlightNav(key) {
+  document.querySelectorAll('.nav-set').forEach(n =>
+    n.classList.toggle('nav-active', n.dataset.key === key));
+  document.querySelector('.nav-set.nav-active')?.scrollIntoView({block:'nearest'});
+}
+
+function updateActiveNavHighlight() {
+  let activeKey = '';
+  SETS.forEach(s => {
+    const el = document.getElementById('set-' + s.key);
+    if (el && el.getBoundingClientRect().top < 150) activeKey = s.key;
+  });
+  if (activeKey) highlightNav(activeKey);
+}
+
+window.addEventListener('scroll', updateActiveNavHighlight);
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  if(sb.classList.contains('open')) {
+    closeSidebar();
+  } else {
+    sb.classList.add('open');
+    document.getElementById('overlay').classList.add('visible');
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('visible');
 }
 
 // ── UI Bindings ──
@@ -512,12 +573,13 @@ document.getElementById('signOutBtn').onclick=()=>{
 
 function showToast(msg){
   const toast=document.getElementById('toast');
+  if(!toast) return;
   toast.textContent=msg;
   toast.classList.add('show');
   setTimeout(()=>toast.classList.remove('show'),2000);
 }
 
-document.querySelector('.logo-wrap').onclick=()=>{
+document.getElementById('logoHeader').onclick=()=>{
   window.location.href='https://metaprinter.github.io/trubbish-bin/';
 };
 
