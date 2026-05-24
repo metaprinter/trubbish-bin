@@ -297,7 +297,7 @@ function render(){
       const rarity=c.r==='h'?'holo':c.r==='g'?'gold':'regular';
       const rarityLabel=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
 
-      // ── CONSTRAINED FIELD GHOSTING (Blank/Hidden until checked/added) ──
+      // ── CARD FIELD GHOST FILTER (Blank fields if unowned) ──
       let detailsMarkup = '';
       if (!isReprint) {
         if (isOwned) {
@@ -364,7 +364,7 @@ function render(){
     main.appendChild(group);
   });
 
-  /* Bind quantities */
+  /* Bind counts */
   document.querySelectorAll('.qty-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
@@ -378,7 +378,7 @@ function render(){
     };
   });
 
-  /* Bind pill settings */
+  /* Bind pill tags */
   document.querySelectorAll('.pill').forEach(pill=>{
     pill.onclick=(e)=>{
       e.stopPropagation();
@@ -410,7 +410,7 @@ function render(){
     };
   });
 
-  /* Bind removal buttons */
+  /* Bind trash removals */
   document.querySelectorAll('.remove-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
@@ -443,7 +443,7 @@ function updateStats(){
   if(oCount) oCount.textContent=ownedCards;
 }
 
-// ── Sidebar Nav Scrollers ──
+// ── Nav Sidebar Interactivity Mechanics ──
 
 function scrollToSet(key) {
   document.getElementById('set-' + key)?.scrollIntoView({behavior:'smooth', block:'start'});
