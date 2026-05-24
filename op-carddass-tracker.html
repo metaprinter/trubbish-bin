@@ -57,16 +57,23 @@
 
   <div class="main-wrap">
     <header class="top-bar">
-      <span class="sync-label">
-        <span class="sync-dot saved"></span>
-        <span id="syncLabel">Synced</span>
-      </span>
-      <div class="stat-pill">
-        <strong id="ownedCount">0</strong> / <span id="totalCount">0</span> cards
+      <div class="top-bar-left">
+        <div class="brand-block">
+          <span class="brand-title">TRUBBISH BIN</span>
+          <span class="brand-subtitle">OP Hyper Battle Card Tracker</span>
+        </div>
+        
+        <span class="sync-label">
+          <span class="sync-dot saved"></span>
+          <span id="syncLabel">Synced</span>
+        </span>
+        
+        <div class="stat-pill">
+          <strong id="ownedCount">0</strong> / <span id="totalCount">0</span> cards owned
+        </div>
       </div>
     </header>
 
-    <div class="gaps-panel" id="gapsPanel"></div>
     <main class="main" id="main"></main>
     <div class="toast" id="toast"></div>
     <input type="file" id="importFile" accept=".tsv,.txt" style="display:none">
