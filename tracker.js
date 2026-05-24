@@ -9,7 +9,7 @@ const IMG_BASE='assets/cards/';
 const FALLBACK_IMG='assets/cards/CarddassHB.jpeg';
 
 let tokenClient,accessToken,driveFileId,data={},saveTimer;
-let activeTab='all',searchTerm='',sortByMissing=false,excludedSets={};
+let activeTab='all',searchTerm='',sortByMissing=false;
 let tokenTimestamp=0,refreshInterval=null;
 
 // ── Google Auth ──
@@ -41,8 +41,8 @@ function showAuthError(msg){
 
 // ── Token Refresh ──
 
-const TOKEN_LIFETIME=3600*1000;   /* Google tokens last 1 hour */
-const REFRESH_BEFORE=600*1000;    /* refresh 10 min before expiry (at 50 min) */
+const TOKEN_LIFETIME=3600*1000;
+const REFRESH_BEFORE=600*1000;
 
 function isTokenStale(){
   return Date.now()-tokenTimestamp>TOKEN_LIFETIME-REFRESH_BEFORE;
@@ -86,7 +86,7 @@ function startTokenRefreshTimer(){
     if(isTokenStale()){
       await silentRefresh();
     }
-  },5*60*1000); /* check every 5 min */
+  },5*60*1000);
 }
 
 // ── Drive Sync ──
@@ -95,7 +95,6 @@ async function driveRequest(url,opts={}){
   await ensureFreshToken();
   const makeHeaders=()=>({...opts.headers,'Authorization':'Bearer '+accessToken});
   let r=await fetch(url,{...opts,headers:makeHeaders()});
-  /* Retry once on auth failure */
   if(r.status===401||r.status===403){
     console.warn('Drive auth failed ('+r.status+'), attempting refresh…');
     const ok=await silentRefresh();
@@ -225,7 +224,7 @@ function render(){
     });
   }
 
-  // ── Render Sidebar Navigation Automatically ──
+  // ── Render Sidebar Navigation (Color-Blind Accessible Status Sync) ──
   const navContainer = document.getElementById('sidebarNav');
   if(navContainer) {
     let navHtml = '';
@@ -233,13 +232,13 @@ function render(){
       const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
       const total=s.cards.filter(c=>!c.rp).length;
       const pct=total>0?Math.round((owned/total)*100):0;
-      const isExcluded=excludedSets[s.key];
+      const isComplete = (owned === total && total > 0);
       
       navHtml += `
-        <div class="nav-set ${isExcluded?'nav-excluded':''}" data-key="${s.key}" onclick="scrollToSet('${s.key}')">
+        <div class="nav-set ${isComplete ? 'is-complete' : ''}" data-key="${s.key}" onclick="scrollToSet('${s.key}')">
           <span class="nav-name">${s.title}</span>
           <div class="nav-meta-row">
-            <span class="nav-count">${owned}/${total}</span>
+            <span class="nav-count">${pct}% ${isComplete ? '✓' : ''}</span>
             <div class="nav-pip"><div class="nav-pip-fill" style="width: ${pct}%"></div></div>
           </div>
         </div>
@@ -258,27 +257,22 @@ function render(){
     const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
     const total=s.cards.filter(c=>!c.rp).length;
     const pct=total>0?Math.round((owned/total)*100):0;
-    const isExcluded=excludedSets[s.key];
+    const isComplete = (owned === total && total > 0);
 
     const group=document.createElement('div');
-    group.className='set-group'+(isExcluded?' excluded':'');
+    group.className='set-group';
     group.id = 'set-' + s.key;
 
+    // ── Restructured Two-Line Header Meta Information Blocks ──
     const hdr=document.createElement('div');
     hdr.className='set-header';
     hdr.innerHTML=`
-<div>
-<div class="set-title">${s.title}</div>
-<div class="set-sub">${s.sub} • ${total} cards</div>
-</div>
-<button class="st-toggle ${isExcluded?'excluded':'included'}">${isExcluded?'EXCL':'INCL'}</button>
-`;
-
-    hdr.querySelector('.st-toggle').onclick=()=>{
-      if(excludedSets[s.key])delete excludedSets[s.key];
-      else excludedSets[s.key]=true;
-      render();
-    };
+      <h2 class="set-title">${s.title}</h2>
+      <div class="set-sub">
+        ${s.sub} • <strong>${owned}</strong> of <strong>${total}</strong> cards owned (${pct}% complete)
+        ${isComplete ? '<span class="complete-banner">🎉 Complete Set!</span>' : ''}
+      </div>
+    `;
 
     const grid=document.createElement('div');
     grid.className='card-grid';
@@ -361,7 +355,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     };
   });
 
-  /* Bind pills (condition, grader, grade) */
+  /* Bind pills */
   document.querySelectorAll('.pill').forEach(pill=>{
     pill.onclick=(e)=>{
       e.stopPropagation();
@@ -405,42 +399,25 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
   });
 
   updateStats();
-  updateGaps();
   updateActiveNavHighlight();
 }
 
-// ── Stats & Gaps ──
+// ── Stats Calculations ──
 
 function updateStats(){
   let totalCards=0;
   let ownedCards=0;
   SETS.forEach(s=>{
-    if(excludedSets[s.key])return;
     s.cards.forEach(c=>{
       if(c.rp)return;
       totalCards++;
       if(data[c.id])ownedCards++;
     });
   });
-  document.getElementById('totalCount').textContent=totalCards;
-  document.getElementById('ownedCount').textContent=ownedCards;
-}
-
-function updateGaps(){
-  const panel=document.getElementById('gapsPanel');
-  const gaps=[];
-  SETS.forEach(s=>{
-    if(excludedSets[s.key])return;
-    const missing=s.cards.filter(c=>!c.rp&&!data[c.id]).length;
-    if(missing>0)gaps.push({set:s.key,title:s.title,count:missing});
-  });
-  if(gaps.length===0){
-    panel.innerHTML='<span class="gaps-panel-label">🎉 Collection Complete!</span>';
-    return;
-  }
-  panel.innerHTML='<span class="gaps-panel-label">Missing:</span>'+gaps.map(g=>
-    `<a href="#set-${g.set}" onclick="event.preventDefault(); scrollToSet('${g.set}')" class="gap-chip"><span class="gap-label">${g.title}</span> <span class="gap-count">${g.count}</span></a>`
-  ).join('');
+  const tCount = document.getElementById('totalCount');
+  const oCount = document.getElementById('ownedCount');
+  if(tCount) tCount.textContent=totalCards;
+  if(oCount) oCount.textContent=ownedCards;
 }
 
 // ── Sidebar Interactivity Mechanics ──
@@ -560,7 +537,6 @@ document.getElementById('importFile').onchange=(e)=>{
 document.getElementById('resetBtn').onclick=()=>{
   if(!confirm('Reset all collection data? This cannot be undone.'))return;
   data={};
-  excludedSets={};
   scheduleSave();
   render();
   showToast('Collection reset');
