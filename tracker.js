@@ -10,6 +10,7 @@ const FALLBACK_IMG='assets/cards/CarddassHB.jpeg';
 
 let tokenClient,accessToken,driveFileId,data={},saveTimer;
 let activeTab='all',searchTerm='',sortByMissing=false,excludedSets={};
+let tokenTimestamp=0,refreshInterval=null;
 
 // ── Google Auth ──
 
@@ -25,6 +26,8 @@ function initAuth(){
 function handleToken(resp){
   if(resp.error)return showAuthError(resp.error);
   accessToken=resp.access_token;
+  tokenTimestamp=Date.now();
+  startTokenRefreshTimer();
   document.getElementById('authScreen').style.display='none';
   document.getElementById('app').style.display='block';
   loadFromDrive();
@@ -36,13 +39,88 @@ function showAuthError(msg){
   el.style.display='block';
 }
 
+// ── Token Refresh ──
+
+const TOKEN_LIFETIME=3600*1000;   // Google tokens last 1 hour
+const REFRESH_BEFORE=600*1000;    // refresh 10 min before expiry (at 50 min)
+
+function isTokenStale(){
+  return Date.now()-tokenTimestamp>TOKEN_LIFETIME-REFRESH_BEFORE;
+}
+
+function silentRefresh(){
+  return new Promise((resolve)=>{
+    const prevCallback=tokenClient.callback;
+    tokenClient.callback=(resp)=>{
+      tokenClient.callback=prevCallback;
+      if(resp.error){
+        console.warn('Silent refresh failed:',resp.error);
+        resolve(false);
+      }else{
+        accessToken=resp.access_token;
+        tokenTimestamp=Date.now();
+        console.log('Token refreshed silently');
+        resolve(true);
+      }
+    };
+    try{
+      tokenClient.requestAccessToken({prompt:''});
+    }catch(e){
+      console.warn('Silent refresh exception:',e);
+      tokenClient.callback=prevCallback;
+      resolve(false);
+    }
+  });
+}
+
+async function ensureFreshToken(){
+  if(isTokenStale()){
+    const ok=await silentRefresh();
+    if(!ok)console.warn('Token may be stale — next Drive call might fail');
+  }
+}
+
+function startTokenRefreshTimer(){
+  if(refreshInterval)clearInterval(refreshInterval);
+  refreshInterval=setInterval(async()=>{
+    if(isTokenStale()){
+      await silentRefresh();
+    }
+  },5*60*1000); // check every 5 min
+}
+
 // ── Drive Sync ──
 
 async function driveRequest(url,opts={}){
-  opts.headers={...opts.headers,'Authorization':'Bearer '+accessToken};
-  const r=await fetch(url,opts);
+  await ensureFreshToken();
+  const makeHeaders=()=>({...opts.headers,'Authorization':'Bearer '+accessToken});
+  let r=await fetch(url,{...opts,headers:makeHeaders()});
+  // Retry once on auth failure
+  if(r.status===401||r.status===403){
+    console.warn('Drive auth failed ('+r.status+'), attempting refresh…');
+    const ok=await silentRefresh();
+    if(ok){
+      r=await fetch(url,{...opts,headers:makeHeaders()});
+    }
+    if(!r.ok&&(r.status===401||r.status===403)){
+      showSessionExpired();
+      throw new Error('Drive auth '+r.status+' — session expired');
+    }
+  }
   if(!r.ok)throw new Error('Drive '+r.status);
   return r;
+}
+
+function showSessionExpired(){
+  setSyncState('error');
+  const label=document.getElementById('syncLabel');
+  label.textContent='Session expired — click to reconnect';
+  label.style.cursor='pointer';
+  label.onclick=()=>{
+    label.style.cursor='';
+    label.onclick=null;
+    tokenClient.requestAccessToken();
+  };
 }
 
 async function findFile(){
@@ -108,7 +186,14 @@ function setSyncState(state){
   const dot=document.querySelector('.sync-dot');
   const label=document.getElementById('syncLabel');
   dot.className='sync-dot '+state;
-  label.textContent=state==='syncing'?'Saving…':state==='saved'?'Synced':'Sync error';
+  if(state!=='error'){
+    label.textContent=state==='syncing'?'Saving…':'Synced';
+    label.style.cursor='';
+    label.onclick=null;
+  }else if(!label.onclick){
+    // Only set generic error if showSessionExpired hasn't set a click handler
+    label.textContent='Sync error';
+  }
 }
 
 // ── Render ──
