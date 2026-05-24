@@ -224,25 +224,37 @@ function render(){
     });
   }
 
-  // ── Render Sidebar Navigation (Color-Blind Accessible Status Sync) ──
+  // ── Render Sidebar Navigation with True Dataset Era Timeline Mappings ──
   const navContainer = document.getElementById('sidebarNav');
   if(navContainer) {
     let navHtml = '';
-    sortedSets.forEach(s => {
-      const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
-      const total=s.cards.filter(c=>!c.rp).length;
-      const pct=total>0?Math.round((owned/total)*100):0;
-      const isComplete = (owned === total && total > 0);
-      
-      navHtml += `
-        <div class="nav-set ${isComplete ? 'is-complete' : ''}" data-key="${s.key}" onclick="scrollToSet('${s.key}')">
-          <span class="nav-name">${s.title}</span>
-          <div class="nav-meta-row">
-            <span class="nav-count">${pct}% ${isComplete ? '✓' : ''}</span>
-            <div class="nav-pip"><div class="nav-pip-fill" style="width: ${pct}%"></div></div>
+    const eras = [
+      { name: '1999–2000 Era', setKeys: ['FIRST', 'SECOND', 'THIRD', 'FOURTH'] },
+      { name: '2001 Era', setKeys: ['GRAND', 'VIVI', 'FIRE', 'CHOPPER', 'ALABASTA'] }
+    ];
+
+    eras.forEach(era => {
+      const eraSets = sortedSets.filter(s => era.setKeys.includes(s.key));
+      if (eraSets.length === 0) return;
+
+      navHtml += `<div class="nav-era-label">${era.name}</div>`;
+
+      eraSets.forEach(s => {
+        const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
+        const total=s.cards.filter(c=>!c.rp).length;
+        const pct=total>0?Math.round((owned/total)*100):0;
+        const isComplete = (owned === total && total > 0);
+        
+        navHtml += `
+          <div class="nav-set ${isComplete ? 'is-complete' : ''}" data-key="${s.key}" onclick="scrollToSet('${s.key}')">
+            <span class="nav-name">${s.title}</span>
+            <div class="nav-meta-row">
+              <span class="nav-count">${pct}% ${isComplete ? '✓' : ''}</span>
+              <div class="nav-pip"><div class="nav-pip-fill" style="width: ${pct}%"></div></div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      });
     });
     navContainer.innerHTML = navHtml;
   }
@@ -263,7 +275,6 @@ function render(){
     group.className='set-group';
     group.id = 'set-' + s.key;
 
-    // ── Restructured Two-Line Header Meta Information Blocks ──
     const hdr=document.createElement('div');
     hdr.className='set-header';
     hdr.innerHTML=`
@@ -286,48 +297,60 @@ function render(){
       const rarity=c.r==='h'?'holo':c.r==='g'?'gold':'regular';
       const rarityLabel=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
 
-      card.innerHTML=`
-<div class="card-img-wrap">
-<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
-<div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
-<div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-${isReprint?'<div class="reprint-badge">REPRINT</div>':''}
-</div>
-<div class="card-body">
-<div class="card-meta">
-<span class="card-id">${c.id}</span>
-<span class="rarity-tag ${rarity}">${rarityLabel}</span>
-</div>
-<div class="card-name">${c.nm}</div>
-${isReprint?'':`<div class="card-detail">
-<div class="qty-row">
-<span class="qty-label">Qty</span>
-<div class="qty-ctrl">
-<button class="qty-btn" data-id="${c.id}" data-op="dec">−</button>
-<span class="qty-val">${d.qty||1}</span>
-<button class="qty-btn" data-id="${c.id}" data-op="inc">+</button>
-</div>
-</div>
-<div class="cond-pills">
-${['NM','LP','MP','HP','D'].map(cnd=>`<span class="pill${(d.cond||[]).includes(cnd)?' on':''}" data-id="${c.id}" data-cond="${cnd}">${cnd}</span>`).join('')}
-</div>
-<div class="grade-row">
-<span class="grade-label">Grade</span>
-<div class="grade-pills">
-${['RAW','CGC','PSA','BGS'].map(gr=>`<span class="pill${(d.grader||'RAW')===gr?' on':''}" data-id="${c.id}" data-grader="${gr}">${gr}</span>`).join('')}
-</div>
-${(d.grader&&d.grader!=='RAW')?`<div class="grade-num-row">
-${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==gn?' on':''}" data-id="${c.id}" data-grade="${gn}">${gn}</span>`).join('')}
-</div>`:''}
-</div>
-<button class="remove-btn" data-id="${c.id}">Remove</button>
-</div>`}
-</div>
-`;
+      // ── CONSTRAINED FIELD GHOSTING (Blank/Hidden until checked/added) ──
+      let detailsMarkup = '';
+      if (!isReprint) {
+        if (isOwned) {
+          detailsMarkup = `
+            <div class="card-detail">
+              <div class="qty-row">
+                <span class="qty-label">Qty</span>
+                <div class="qty-ctrl">
+                  <button class="qty-btn" data-id="${c.id}" data-op="dec">−</button>
+                  <span class="qty-val">${d.qty||1}</span>
+                  <button class="qty-btn" data-id="${c.id}" data-op="inc">+</button>
+                </div>
+              </div>
+              <div class="cond-pills">
+                ${['NM','LP','MP','HP','D'].map(cnd=>`<span class="pill${(d.cond||[]).includes(cnd)?' on':''}" data-id="${c.id}" data-cond="${cnd}">${cnd}</span>`).join('')}
+              </div>
+              <div class="grade-row">
+                <span class="grade-label">Grade</span>
+                <div class="grade-pills">
+                  ${['RAW','CGC','PSA','BGS'].map(gr=>`<span class="pill${(d.grader||'RAW')===gr?' on':''}" data-id="${c.id}" data-grader="${gr}">${gr}</span>`).join('')}
+                </div>
+                ${(d.grader&&d.grader!=='RAW')?`<div class="grade-num-row">
+                  ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==gn?' on':''}" data-id="${c.id}" data-grade="${gn}">${gn}</span>`).join('')}
+                </div>`:''}
+              </div>
+              <button class="remove-btn" data-id="${c.id}">Remove</button>
+            </div>
+          `;
+        } else {
+          detailsMarkup = `<div class="card-add-prompt">+ Add to Collection</div>`;
+        }
+      }
 
-      if(!isReprint&&!isOwned){
+      card.innerHTML=`
+        <div class="card-img-wrap">
+          <img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
+          <div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
+          <div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          ${isReprint?'<div class="reprint-badge">REPRINT</div>':''}
+        </div>
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="card-id">${c.id}</span>
+            <span class="rarity-tag ${rarity}">${rarityLabel}</span>
+          </div>
+          <div class="card-name">${c.nm}</div>
+          ${detailsMarkup}
+        </div>
+      `;
+
+      if(!isReprint && !isOwned){
         card.onclick=()=>{
-          if(!data[c.id])data[c.id]={qty:1,cond:['NM']};
+          if(!data[c.id]) data[c.id]={qty:1,cond:['NM'],grader:'RAW'};
           scheduleSave();
           render();
         };
@@ -341,13 +364,13 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     main.appendChild(group);
   });
 
-  /* Bind qty buttons */
+  /* Bind quantities */
   document.querySelectorAll('.qty-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
       const id=btn.dataset.id;
       const op=btn.dataset.op;
-      if(!data[id])data[id]={qty:1,cond:['NM']};
+      if(!data[id])data[id]={qty:1,cond:['NM'],grader:'RAW'};
       if(op==='inc')data[id].qty=(data[id].qty||1)+1;
       else if(op==='dec')data[id].qty=Math.max(1,(data[id].qty||1)-1);
       scheduleSave();
@@ -355,7 +378,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     };
   });
 
-  /* Bind pills */
+  /* Bind pill settings */
   document.querySelectorAll('.pill').forEach(pill=>{
     pill.onclick=(e)=>{
       e.stopPropagation();
@@ -387,7 +410,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     };
   });
 
-  /* Bind remove buttons */
+  /* Bind removal buttons */
   document.querySelectorAll('.remove-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
@@ -420,7 +443,7 @@ function updateStats(){
   if(oCount) oCount.textContent=ownedCards;
 }
 
-// ── Sidebar Interactivity Mechanics ──
+// ── Sidebar Nav Scrollers ──
 
 function scrollToSet(key) {
   document.getElementById('set-' + key)?.scrollIntoView({behavior:'smooth', block:'start'});
