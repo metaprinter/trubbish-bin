@@ -9,7 +9,7 @@ const IMG_BASE='assets/cards/';
 const FALLBACK_IMG='assets/cards/CarddassHB.jpeg';
 
 let tokenClient,accessToken,driveFileId,data={},saveTimer;
-let activeTab='all',searchTerm='',sortByMissing=false;
+let activeTab='all',searchTerm='',sortByMissing=false,excludedSets={};
 let tokenTimestamp=0,refreshInterval=null;
 
 // ── Google Auth ──
@@ -41,8 +41,8 @@ function showAuthError(msg){
 
 // ── Token Refresh ──
 
-const TOKEN_LIFETIME=3600*1000;
-const REFRESH_BEFORE=600*1000;
+const TOKEN_LIFETIME=3600*1000;   // Google tokens last 1 hour
+const REFRESH_BEFORE=600*1000;    // refresh 10 min before expiry (at 50 min)
 
 function isTokenStale(){
   return Date.now()-tokenTimestamp>TOKEN_LIFETIME-REFRESH_BEFORE;
@@ -86,7 +86,7 @@ function startTokenRefreshTimer(){
     if(isTokenStale()){
       await silentRefresh();
     }
-  },5*60*1000);
+  },5*60*1000); // check every 5 min
 }
 
 // ── Drive Sync ──
@@ -95,6 +95,7 @@ async function driveRequest(url,opts={}){
   await ensureFreshToken();
   const makeHeaders=()=>({...opts.headers,'Authorization':'Bearer '+accessToken});
   let r=await fetch(url,{...opts,headers:makeHeaders()});
+  // Retry once on auth failure
   if(r.status===401||r.status===403){
     console.warn('Drive auth failed ('+r.status+'), attempting refresh…');
     const ok=await silentRefresh();
@@ -184,13 +185,13 @@ function scheduleSave(){
 function setSyncState(state){
   const dot=document.querySelector('.sync-dot');
   const label=document.getElementById('syncLabel');
-  if(!dot || !label) return;
   dot.className='sync-dot '+state;
   if(state!=='error'){
     label.textContent=state==='syncing'?'Saving…':'Synced';
     label.style.cursor='';
     label.onclick=null;
   }else if(!label.onclick){
+    // Only set generic error if showSessionExpired hasn't set a click handler
     label.textContent='Sync error';
   }
 }
@@ -224,41 +225,6 @@ function render(){
     });
   }
 
-  // ── Render Sidebar Navigation with True Dataset Era Timeline Mappings ──
-  const navContainer = document.getElementById('sidebarNav');
-  if(navContainer) {
-    let navHtml = '';
-    const eras = [
-      { name: '1999–2000 Era', setKeys: ['FIRST', 'SECOND', 'THIRD', 'FOURTH'] },
-      { name: '2001 Era', setKeys: ['GRAND', 'VIVI', 'FIRE', 'CHOPPER', 'ALABASTA'] }
-    ];
-
-    eras.forEach(era => {
-      const eraSets = sortedSets.filter(s => era.setKeys.includes(s.key));
-      if (eraSets.length === 0) return;
-
-      navHtml += `<div class="nav-era-label">${era.name}</div>`;
-
-      eraSets.forEach(s => {
-        const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
-        const total=s.cards.filter(c=>!c.rp).length;
-        const pct=total>0?Math.round((owned/total)*100):0;
-        const isComplete = (owned === total && total > 0);
-        
-        navHtml += `
-          <div class="nav-set ${isComplete ? 'is-complete' : ''}" data-key="${s.key}" onclick="scrollToSet('${s.key}')">
-            <span class="nav-name">${s.title}</span>
-            <div class="nav-meta-row">
-              <span class="nav-count">${pct}% ${isComplete ? '✓' : ''}</span>
-              <div class="nav-pip"><div class="nav-pip-fill" style="width: ${pct}%"></div></div>
-            </div>
-          </div>
-        `;
-      });
-    });
-    navContainer.innerHTML = navHtml;
-  }
-
   const main=document.getElementById('main');
   main.innerHTML='';
 
@@ -269,21 +235,30 @@ function render(){
     const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
     const total=s.cards.filter(c=>!c.rp).length;
     const pct=total>0?Math.round((owned/total)*100):0;
-    const isComplete = (owned === total && total > 0);
+    const isExcluded=excludedSets[s.key];
 
     const group=document.createElement('div');
-    group.className='set-group';
-    group.id = 'set-' + s.key;
+    group.className='set-group'+(isExcluded?' excluded':'');
 
     const hdr=document.createElement('div');
     hdr.className='set-header';
     hdr.innerHTML=`
-      <h2 class="set-title">${s.title}</h2>
-      <div class="set-sub">
-        ${s.sub} • <strong>${owned}</strong> of <strong>${total}</strong> cards owned (${pct}% complete)
-        ${isComplete ? '<span class="complete-banner">🎉 Complete Set!</span>' : ''}
-      </div>
-    `;
+<div>
+<div class="set-title">${s.title}</div>
+<div class="set-sub">${s.sub} • ${total} cards</div>
+</div>
+<div class="set-progress">
+<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+<div class="progress-pct">${owned}/${total} (${pct}%)</div>
+</div>
+<button class="st-toggle ${isExcluded?'excluded':'included'}">${isExcluded?'EXCL':'INCL'}</button>
+`;
+
+    hdr.querySelector('.st-toggle').onclick=()=>{
+      if(excludedSets[s.key])delete excludedSets[s.key];
+      else excludedSets[s.key]=true;
+      render();
+    };
 
     const grid=document.createElement('div');
     grid.className='card-grid';
@@ -297,60 +272,48 @@ function render(){
       const rarity=c.r==='h'?'holo':c.r==='g'?'gold':'regular';
       const rarityLabel=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
 
-      // ── CARD FIELD GHOST FILTER (Blank fields if unowned) ──
-      let detailsMarkup = '';
-      if (!isReprint) {
-        if (isOwned) {
-          detailsMarkup = `
-            <div class="card-detail">
-              <div class="qty-row">
-                <span class="qty-label">Qty</span>
-                <div class="qty-ctrl">
-                  <button class="qty-btn" data-id="${c.id}" data-op="dec">−</button>
-                  <span class="qty-val">${d.qty||1}</span>
-                  <button class="qty-btn" data-id="${c.id}" data-op="inc">+</button>
-                </div>
-              </div>
-              <div class="cond-pills">
-                ${['NM','LP','MP','HP','D'].map(cnd=>`<span class="pill${(d.cond||[]).includes(cnd)?' on':''}" data-id="${c.id}" data-cond="${cnd}">${cnd}</span>`).join('')}
-              </div>
-              <div class="grade-row">
-                <span class="grade-label">Grade</span>
-                <div class="grade-pills">
-                  ${['RAW','CGC','PSA','BGS'].map(gr=>`<span class="pill${(d.grader||'RAW')===gr?' on':''}" data-id="${c.id}" data-grader="${gr}">${gr}</span>`).join('')}
-                </div>
-                ${(d.grader&&d.grader!=='RAW')?`<div class="grade-num-row">
-                  ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==gn?' on':''}" data-id="${c.id}" data-grade="${gn}">${gn}</span>`).join('')}
-                </div>`:''}
-              </div>
-              <button class="remove-btn" data-id="${c.id}">Remove</button>
-            </div>
-          `;
-        } else {
-          detailsMarkup = `<div class="card-add-prompt">+ Add to Collection</div>`;
-        }
-      }
-
       card.innerHTML=`
-        <div class="card-img-wrap">
-          <img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
-          <div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
-          <div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-          ${isReprint?'<div class="reprint-badge">REPRINT</div>':''}
-        </div>
-        <div class="card-body">
-          <div class="card-meta">
-            <span class="card-id">${c.id}</span>
-            <span class="rarity-tag ${rarity}">${rarityLabel}</span>
-          </div>
-          <div class="card-name">${c.nm}</div>
-          ${detailsMarkup}
-        </div>
-      `;
+<div class="card-img-wrap">
+<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
+<div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
+<div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+${isReprint?'<div class="reprint-badge">REPRINT</div>':''}
+</div>
+<div class="card-body">
+<div class="card-meta">
+<span class="card-id">${c.id}</span>
+<span class="rarity-tag ${rarity}">${rarityLabel}</span>
+</div>
+<div class="card-name">${c.nm}</div>
+${isReprint?'':`<div class="card-detail">
+<div class="qty-row">
+<span class="qty-label">Qty</span>
+<div class="qty-ctrl">
+<button class="qty-btn" data-id="${c.id}" data-op="dec">−</button>
+<span class="qty-val">${d.qty||1}</span>
+<button class="qty-btn" data-id="${c.id}" data-op="inc">+</button>
+</div>
+</div>
+<div class="cond-pills">
+${['NM','LP','MP','HP','D'].map(cnd=>`<span class="pill${(d.cond||[]).includes(cnd)?' on':''}" data-id="${c.id}" data-cond="${cnd}">${cnd}</span>`).join('')}
+</div>
+<div class="grade-row">
+<span class="grade-label">Grade</span>
+<div class="grade-pills">
+${['RAW','CGC','PSA','BGS'].map(gr=>`<span class="pill${(d.grader||'RAW')===gr?' on':''}" data-id="${c.id}" data-grader="${gr}">${gr}</span>`).join('')}
+</div>
+${(d.grader&&d.grader!=='RAW')?`<div class="grade-num-row">
+${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==gn?' on':''}" data-id="${c.id}" data-grade="${gn}">${gn}</span>`).join('')}
+</div>`:''}
+</div>
+<button class="remove-btn" data-id="${c.id}">Remove</button>
+</div>`}
+</div>
+`;
 
-      if(!isReprint && !isOwned){
+      if(!isReprint&&!isOwned){
         card.onclick=()=>{
-          if(!data[c.id]) data[c.id]={qty:1,cond:['NM'],grader:'RAW'};
+          if(!data[c.id])data[c.id]={qty:1,cond:['NM']};
           scheduleSave();
           render();
         };
@@ -364,13 +327,13 @@ function render(){
     main.appendChild(group);
   });
 
-  /* Bind counts */
+  // Bind qty buttons
   document.querySelectorAll('.qty-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
       const id=btn.dataset.id;
       const op=btn.dataset.op;
-      if(!data[id])data[id]={qty:1,cond:['NM'],grader:'RAW'};
+      if(!data[id])data[id]={qty:1,cond:['NM']};
       if(op==='inc')data[id].qty=(data[id].qty||1)+1;
       else if(op==='dec')data[id].qty=Math.max(1,(data[id].qty||1)-1);
       scheduleSave();
@@ -378,7 +341,7 @@ function render(){
     };
   });
 
-  /* Bind pill tags */
+  // Bind pills (condition, grader, grade)
   document.querySelectorAll('.pill').forEach(pill=>{
     pill.onclick=(e)=>{
       e.stopPropagation();
@@ -410,7 +373,7 @@ function render(){
     };
   });
 
-  /* Bind trash removals */
+  // Bind remove buttons
   document.querySelectorAll('.remove-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
@@ -422,65 +385,41 @@ function render(){
   });
 
   updateStats();
-  updateActiveNavHighlight();
+  updateGaps();
 }
 
-// ── Stats Calculations ──
+// ── Stats & Gaps ──
 
 function updateStats(){
   let totalCards=0;
   let ownedCards=0;
   SETS.forEach(s=>{
+    if(excludedSets[s.key])return;
     s.cards.forEach(c=>{
       if(c.rp)return;
       totalCards++;
       if(data[c.id])ownedCards++;
     });
   });
-  const tCount = document.getElementById('totalCount');
-  const oCount = document.getElementById('ownedCount');
-  if(tCount) tCount.textContent=totalCards;
-  if(oCount) oCount.textContent=ownedCards;
+  document.getElementById('totalCount').textContent=totalCards;
+  document.getElementById('ownedCount').textContent=ownedCards;
 }
 
-// ── Nav Sidebar Interactivity Mechanics ──
-
-function scrollToSet(key) {
-  document.getElementById('set-' + key)?.scrollIntoView({behavior:'smooth', block:'start'});
-  closeSidebar();
-  highlightNav(key);
-}
-
-function highlightNav(key) {
-  document.querySelectorAll('.nav-set').forEach(n =>
-    n.classList.toggle('nav-active', n.dataset.key === key));
-  document.querySelector('.nav-set.nav-active')?.scrollIntoView({block:'nearest'});
-}
-
-function updateActiveNavHighlight() {
-  let activeKey = '';
-  SETS.forEach(s => {
-    const el = document.getElementById('set-' + s.key);
-    if (el && el.getBoundingClientRect().top < 150) activeKey = s.key;
+function updateGaps(){
+  const panel=document.getElementById('gapsPanel');
+  const gaps=[];
+  SETS.forEach(s=>{
+    if(excludedSets[s.key])return;
+    const missing=s.cards.filter(c=>!c.rp&&!data[c.id]).length;
+    if(missing>0)gaps.push({set:s.key,title:s.title,count:missing});
   });
-  if (activeKey) highlightNav(activeKey);
-}
-
-window.addEventListener('scroll', updateActiveNavHighlight);
-
-function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  if(sb.classList.contains('open')) {
-    closeSidebar();
-  } else {
-    sb.classList.add('open');
-    document.getElementById('overlay').classList.add('visible');
+  if(gaps.length===0){
+    panel.innerHTML='<span class="gaps-panel-label">🎉 Collection Complete!</span>';
+    return;
   }
-}
-
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('visible');
+  panel.innerHTML='<span class="gaps-panel-label">Missing:</span>'+gaps.map(g=>
+    `<a href="#${g.set}" class="gap-chip"><span class="gap-label">${g.title}</span> <span class="gap-count">${g.count}</span></a>`
+  ).join('');
 }
 
 // ── UI Bindings ──
@@ -560,6 +499,7 @@ document.getElementById('importFile').onchange=(e)=>{
 document.getElementById('resetBtn').onclick=()=>{
   if(!confirm('Reset all collection data? This cannot be undone.'))return;
   data={};
+  excludedSets={};
   scheduleSave();
   render();
   showToast('Collection reset');
@@ -572,13 +512,12 @@ document.getElementById('signOutBtn').onclick=()=>{
 
 function showToast(msg){
   const toast=document.getElementById('toast');
-  if(!toast) return;
   toast.textContent=msg;
   toast.classList.add('show');
   setTimeout(()=>toast.classList.remove('show'),2000);
 }
 
-document.getElementById('logoHeader').onclick=()=>{
+document.querySelector('.logo-wrap').onclick=()=>{
   window.location.href='https://metaprinter.github.io/trubbish-bin/';
 };
 
