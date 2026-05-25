@@ -9,7 +9,7 @@ const IMG_BASE='assets/cards/';
 const FALLBACK_IMG='assets/cards/CarddassHB.jpeg';
 
 let tokenClient,accessToken,driveFileId,data={},saveTimer;
-let activeTab='all',searchTerm='',sortByMissing=false,excludedSets={};
+let activeTab='all',searchTerm='',sortByMissing=false;
 let tokenTimestamp=0,refreshInterval=null;
 
 // ── Google Auth ──
@@ -41,8 +41,8 @@ function showAuthError(msg){
 
 // ── Token Refresh ──
 
-const TOKEN_LIFETIME=3600*1000;   // Google tokens last 1 hour
-const REFRESH_BEFORE=600*1000;    // refresh 10 min before expiry (at 50 min)
+const TOKEN_LIFETIME=3600*1000;
+const REFRESH_BEFORE=600*1000;
 
 function isTokenStale(){
   return Date.now()-tokenTimestamp>TOKEN_LIFETIME-REFRESH_BEFORE;
@@ -86,7 +86,7 @@ function startTokenRefreshTimer(){
     if(isTokenStale()){
       await silentRefresh();
     }
-  },5*60*1000); // check every 5 min
+  },5*60*1000);
 }
 
 // ── Drive Sync ──
@@ -95,7 +95,6 @@ async function driveRequest(url,opts={}){
   await ensureFreshToken();
   const makeHeaders=()=>({...opts.headers,'Authorization':'Bearer '+accessToken});
   let r=await fetch(url,{...opts,headers:makeHeaders()});
-  // Retry once on auth failure
   if(r.status===401||r.status===403){
     console.warn('Drive auth failed ('+r.status+'), attempting refresh…');
     const ok=await silentRefresh();
@@ -185,14 +184,21 @@ function scheduleSave(){
 function setSyncState(state){
   const dot=document.querySelector('.sync-dot');
   const label=document.getElementById('syncLabel');
+  const pill=document.getElementById('statPill');
+  if(!dot || !label) return;
   dot.className='sync-dot '+state;
   if(state!=='error'){
     label.textContent=state==='syncing'?'Saving…':'Synced';
     label.style.cursor='';
     label.onclick=null;
   }else if(!label.onclick){
-    // Only set generic error if showSessionExpired hasn't set a click handler
     label.textContent='Sync error';
+  }
+  // Update stat pill color: green when synced, red on error
+  if(pill){
+    pill.classList.remove('synced','out-of-sync');
+    if(state==='saved') pill.classList.add('synced');
+    else if(state==='error') pill.classList.add('out-of-sync');
   }
 }
 
@@ -225,6 +231,32 @@ function render(){
     });
   }
 
+  // ── Render Sidebar Navigation — all 16 sets, single era ──
+  const navContainer = document.getElementById('sidebarNav');
+  if(navContainer) {
+    let navHtml = '';
+    navHtml += '<div class="nav-era-label">Era 1 — Carddass Hyper Battle</div>';
+
+    sortedSets.forEach(s => {
+      const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
+      const total=s.cards.filter(c=>!c.rp).length;
+      const pct=total>0?Math.round((owned/total)*100):0;
+      const isComplete = (owned === total && total > 0);
+
+      navHtml += `
+        <div class="nav-set ${isComplete ? 'is-complete' : ''}" data-key="${s.key}" onclick="scrollToSet('${s.key}')">
+          <span class="nav-name">${s.title}</span>
+          <div class="nav-meta-row">
+            <span class="nav-count">${owned}/${total}</span>
+            <div class="nav-pip"><div class="nav-pip-fill" style="width: ${pct}%"></div></div>
+            <span class="nav-pct">${pct}%</span>
+          </div>
+        </div>
+      `;
+    });
+    navContainer.innerHTML = navHtml;
+  }
+
   const main=document.getElementById('main');
   main.innerHTML='';
 
@@ -235,30 +267,18 @@ function render(){
     const owned=s.cards.filter(c=>!c.rp&&data[c.id]).length;
     const total=s.cards.filter(c=>!c.rp).length;
     const pct=total>0?Math.round((owned/total)*100):0;
-    const isExcluded=excludedSets[s.key];
+    const isComplete = (owned === total && total > 0);
 
     const group=document.createElement('div');
-    group.className='set-group'+(isExcluded?' excluded':'');
+    group.className='set-group';
+    group.id = 'set-' + s.key;
 
     const hdr=document.createElement('div');
     hdr.className='set-header';
     hdr.innerHTML=`
-<div>
-<div class="set-title">${s.title}</div>
-<div class="set-sub">${s.sub} • ${total} cards</div>
-</div>
-<div class="set-progress">
-<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-<div class="progress-pct">${owned}/${total} (${pct}%)</div>
-</div>
-<button class="st-toggle ${isExcluded?'excluded':'included'}">${isExcluded?'EXCL':'INCL'}</button>
-`;
-
-    hdr.querySelector('.st-toggle').onclick=()=>{
-      if(excludedSets[s.key])delete excludedSets[s.key];
-      else excludedSets[s.key]=true;
-      render();
-    };
+      <h2 class="set-title">${s.title}</h2>
+      <div class="set-sub">${s.sub}</div>
+    `;
 
     const grid=document.createElement('div');
     grid.className='card-grid';
@@ -272,48 +292,59 @@ function render(){
       const rarity=c.r==='h'?'holo':c.r==='g'?'gold':'regular';
       const rarityLabel=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
 
-      card.innerHTML=`
-<div class="card-img-wrap">
-<img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
-<div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
-<div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-${isReprint?'<div class="reprint-badge">REPRINT</div>':''}
-</div>
-<div class="card-body">
-<div class="card-meta">
-<span class="card-id">${c.id}</span>
-<span class="rarity-tag ${rarity}">${rarityLabel}</span>
-</div>
-<div class="card-name">${c.nm}</div>
-${isReprint?'':`<div class="card-detail">
-<div class="qty-row">
-<span class="qty-label">Qty</span>
-<div class="qty-ctrl">
-<button class="qty-btn" data-id="${c.id}" data-op="dec">−</button>
-<span class="qty-val">${d.qty||1}</span>
-<button class="qty-btn" data-id="${c.id}" data-op="inc">+</button>
-</div>
-</div>
-<div class="cond-pills">
-${['NM','LP','MP','HP','D'].map(cnd=>`<span class="pill${(d.cond||[]).includes(cnd)?' on':''}" data-id="${c.id}" data-cond="${cnd}">${cnd}</span>`).join('')}
-</div>
-<div class="grade-row">
-<span class="grade-label">Grade</span>
-<div class="grade-pills">
-${['RAW','CGC','PSA','BGS'].map(gr=>`<span class="pill${(d.grader||'RAW')===gr?' on':''}" data-id="${c.id}" data-grader="${gr}">${gr}</span>`).join('')}
-</div>
-${(d.grader&&d.grader!=='RAW')?`<div class="grade-num-row">
-${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==gn?' on':''}" data-id="${c.id}" data-grade="${gn}">${gn}</span>`).join('')}
-</div>`:''}
-</div>
-<button class="remove-btn" data-id="${c.id}">Remove</button>
-</div>`}
-</div>
-`;
+      let detailsMarkup = '';
+      if (!isReprint) {
+        if (isOwned) {
+          detailsMarkup = `
+            <div class="card-detail">
+              <div class="qty-row">
+                <span class="qty-label">Qty</span>
+                <div class="qty-ctrl">
+                  <button class="qty-btn" data-id="${c.id}" data-op="dec" aria-label="Decrease quantity">−</button>
+                  <span class="qty-val">${d.qty||1}</span>
+                  <button class="qty-btn" data-id="${c.id}" data-op="inc" aria-label="Increase quantity">+</button>
+                </div>
+              </div>
+              <div class="cond-pills">
+                ${['NM','LP','MP','HP','D'].map(cnd=>`<span class="pill${(d.cond||[]).includes(cnd)?' on':''}" data-id="${c.id}" data-cond="${cnd}">${cnd}</span>`).join('')}
+              </div>
+              <div class="grade-row">
+                <span class="grade-label">Grade</span>
+                <div class="grade-pills">
+                  ${['RAW','CGC','PSA','BGS'].map(gr=>`<span class="pill${(d.grader||'RAW')===gr?' on':''}" data-id="${c.id}" data-grader="${gr}">${gr}</span>`).join('')}
+                </div>
+                ${(d.grader&&d.grader!=='RAW')?`<div class="grade-num-row">
+                  ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==gn?' on':''}" data-id="${c.id}" data-grade="${gn}">${gn}</span>`).join('')}
+                </div>`:''}
+              </div>
+              <button class="remove-btn" data-id="${c.id}">Remove</button>
+            </div>
+          `;
+        } else {
+          detailsMarkup = `<div class="card-add-prompt">+ Add to Collection</div>`;
+        }
+      }
 
-      if(!isReprint&&!isOwned){
+      card.innerHTML=`
+        <div class="card-img-wrap">
+          <img src="${IMG_BASE}${c.id.toLowerCase()}.png" alt="${c.nm}" onload="this.classList.remove('loading');this.parentNode.querySelector('.img-ph').style.display='none';" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" class="loading">
+          <div class="img-ph"><div class="img-ph-id">${c.id}</div></div>
+          <div class="owned-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          ${isReprint?'<div class="reprint-badge">REPRINT</div>':''}
+        </div>
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="card-id">${c.id}</span>
+            <span class="rarity-tag ${rarity}">${rarityLabel}</span>
+          </div>
+          <div class="card-name">${c.nm}</div>
+          ${detailsMarkup}
+        </div>
+      `;
+
+      if(!isReprint && !isOwned){
         card.onclick=()=>{
-          if(!data[c.id])data[c.id]={qty:1,cond:['NM']};
+          if(!data[c.id]) data[c.id]={qty:1,cond:['NM'],grader:'RAW'};
           scheduleSave();
           render();
         };
@@ -327,13 +358,13 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     main.appendChild(group);
   });
 
-  // Bind qty buttons
+  /* Bind qty buttons */
   document.querySelectorAll('.qty-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
       const id=btn.dataset.id;
       const op=btn.dataset.op;
-      if(!data[id])data[id]={qty:1,cond:['NM']};
+      if(!data[id])data[id]={qty:1,cond:['NM'],grader:'RAW'};
       if(op==='inc')data[id].qty=(data[id].qty||1)+1;
       else if(op==='dec')data[id].qty=Math.max(1,(data[id].qty||1)-1);
       scheduleSave();
@@ -341,7 +372,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     };
   });
 
-  // Bind pills (condition, grader, grade)
+  /* Bind pill tags */
   document.querySelectorAll('.pill').forEach(pill=>{
     pill.onclick=(e)=>{
       e.stopPropagation();
@@ -373,7 +404,7 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
     };
   });
 
-  // Bind remove buttons
+  /* Bind trash removals */
   document.querySelectorAll('.remove-btn').forEach(btn=>{
     btn.onclick=(e)=>{
       e.stopPropagation();
@@ -385,41 +416,65 @@ ${['6','7','8','8.5','9','9.5','10'].map(gn=>`<span class="pill${(d.grade||'')==
   });
 
   updateStats();
-  updateGaps();
+  updateActiveNavHighlight();
 }
 
-// ── Stats & Gaps ──
+// ── Stats ──
 
 function updateStats(){
   let totalCards=0;
   let ownedCards=0;
   SETS.forEach(s=>{
-    if(excludedSets[s.key])return;
     s.cards.forEach(c=>{
       if(c.rp)return;
       totalCards++;
       if(data[c.id])ownedCards++;
     });
   });
-  document.getElementById('totalCount').textContent=totalCards;
-  document.getElementById('ownedCount').textContent=ownedCards;
+  const tCount = document.getElementById('totalCount');
+  const oCount = document.getElementById('ownedCount');
+  if(tCount) tCount.textContent=totalCards;
+  if(oCount) oCount.textContent=ownedCards;
 }
 
-function updateGaps(){
-  const panel=document.getElementById('gapsPanel');
-  const gaps=[];
-  SETS.forEach(s=>{
-    if(excludedSets[s.key])return;
-    const missing=s.cards.filter(c=>!c.rp&&!data[c.id]).length;
-    if(missing>0)gaps.push({set:s.key,title:s.title,count:missing});
+// ── Nav Sidebar Interactivity ──
+
+function scrollToSet(key) {
+  document.getElementById('set-' + key)?.scrollIntoView({behavior:'smooth', block:'start'});
+  closeSidebar();
+  highlightNav(key);
+}
+
+function highlightNav(key) {
+  document.querySelectorAll('.nav-set').forEach(n =>
+    n.classList.toggle('nav-active', n.dataset.key === key));
+  document.querySelector('.nav-set.nav-active')?.scrollIntoView({block:'nearest'});
+}
+
+function updateActiveNavHighlight() {
+  let activeKey = '';
+  SETS.forEach(s => {
+    const el = document.getElementById('set-' + s.key);
+    if (el && el.getBoundingClientRect().top < 150) activeKey = s.key;
   });
-  if(gaps.length===0){
-    panel.innerHTML='<span class="gaps-panel-label">🎉 Collection Complete!</span>';
-    return;
+  if (activeKey) highlightNav(activeKey);
+}
+
+window.addEventListener('scroll', updateActiveNavHighlight);
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  if(sb.classList.contains('open')) {
+    closeSidebar();
+  } else {
+    sb.classList.add('open');
+    document.getElementById('overlay').classList.add('visible');
   }
-  panel.innerHTML='<span class="gaps-panel-label">Missing:</span>'+gaps.map(g=>
-    `<a href="#${g.set}" class="gap-chip"><span class="gap-label">${g.title}</span> <span class="gap-count">${g.count}</span></a>`
-  ).join('');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('visible');
 }
 
 // ── UI Bindings ──
@@ -496,15 +551,6 @@ document.getElementById('importFile').onchange=(e)=>{
   reader.readAsText(file);
 };
 
-document.getElementById('resetBtn').onclick=()=>{
-  if(!confirm('Reset all collection data? This cannot be undone.'))return;
-  data={};
-  excludedSets={};
-  scheduleSave();
-  render();
-  showToast('Collection reset');
-};
-
 document.getElementById('signOutBtn').onclick=()=>{
   google.accounts.oauth2.revoke(accessToken);
   location.reload();
@@ -512,12 +558,13 @@ document.getElementById('signOutBtn').onclick=()=>{
 
 function showToast(msg){
   const toast=document.getElementById('toast');
+  if(!toast) return;
   toast.textContent=msg;
   toast.classList.add('show');
   setTimeout(()=>toast.classList.remove('show'),2000);
 }
 
-document.querySelector('.logo-wrap').onclick=()=>{
+document.getElementById('logoHeader').onclick=()=>{
   window.location.href='https://metaprinter.github.io/trubbish-bin/';
 };
 
