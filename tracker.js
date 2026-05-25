@@ -9,7 +9,7 @@ const IMG_BASE='assets/cards/';
 const FALLBACK_IMG='assets/cards/CarddassHB.jpeg';
 
 let tokenClient,accessToken,driveFileId,data={},saveTimer;
-let activeTab='all',searchTerm='',sortByMissing=false;
+let activeTab='all',searchTerm='',rarityFilter='';
 let tokenTimestamp=0,refreshInterval=null;
 
 // ── Google Auth ──
@@ -219,17 +219,11 @@ function render(){
     const q=searchTerm.toLowerCase();
     filtered=filtered.filter(c=>c.id.toLowerCase().includes(q)||c.nm.toLowerCase().includes(q));
   }
+  if(rarityFilter){
+    filtered=filtered.filter(c=>c.r===rarityFilter);
+  }
 
   let sortedSets=SETS.slice();
-  if(sortByMissing){
-    sortedSets.sort((a,b)=>{
-      const aMiss=a.cards.filter(c=>!c.rp&&!data[c.id]).length;
-      const bMiss=b.cards.filter(c=>!c.rp&&!data[c.id]).length;
-      if(aMiss===0&&bMiss>0)return 1;
-      if(bMiss===0&&aMiss>0)return -1;
-      return bMiss-aMiss;
-    });
-  }
 
   // ── Render Sidebar Navigation — all 16 sets, single era ──
   const navContainer = document.getElementById('sidebarNav');
@@ -286,7 +280,7 @@ function render(){
     setCards.forEach(c=>{
       const isReprint=!!c.rp;
       const d=data[c.id]||{};
-      const isOwned=!!d.qty;
+      const isOwned=!!data[c.id];
       const card=document.createElement('div');
       card.className='card'+(isOwned?' owned':'')+(isReprint?' reprint':'');
       const rarity=c.r==='h'?'holo':c.r==='g'?'gold':'regular';
@@ -301,7 +295,7 @@ function render(){
                 <span class="qty-label">Qty</span>
                 <div class="qty-ctrl">
                   <button class="qty-btn" data-id="${c.id}" data-op="dec" aria-label="Decrease quantity">−</button>
-                  <span class="qty-val">${d.qty||1}</span>
+                  <span class="qty-val">${d.qty||0}</span>
                   <button class="qty-btn" data-id="${c.id}" data-op="inc" aria-label="Increase quantity">+</button>
                 </div>
               </div>
@@ -344,7 +338,7 @@ function render(){
 
       if(!isReprint && !isOwned){
         card.onclick=()=>{
-          if(!data[c.id]) data[c.id]={qty:1,cond:['NM'],grader:'RAW'};
+          if(!data[c.id]) data[c.id]={qty:0,cond:['NM'],grader:'RAW'};
           scheduleSave();
           render();
         };
@@ -364,9 +358,9 @@ function render(){
       e.stopPropagation();
       const id=btn.dataset.id;
       const op=btn.dataset.op;
-      if(!data[id])data[id]={qty:1,cond:['NM'],grader:'RAW'};
-      if(op==='inc')data[id].qty=(data[id].qty||1)+1;
-      else if(op==='dec')data[id].qty=Math.max(1,(data[id].qty||1)-1);
+      if(!data[id])data[id]={qty:0,cond:['NM'],grader:'RAW'};
+      if(op==='inc')data[id].qty=(data[id].qty||0)+1;
+      else if(op==='dec')data[id].qty=Math.max(0,(data[id].qty||0)-1);
       scheduleSave();
       render();
     };
@@ -381,7 +375,7 @@ function render(){
       const grader=pill.dataset.grader;
       const grade=pill.dataset.grade;
 
-      if(!data[id])data[id]={qty:1,cond:[],grader:'RAW'};
+      if(!data[id])data[id]={qty:0,cond:[],grader:'RAW'};
 
       if(cnd){
         if(!data[id].cond)data[id].cond=[];
@@ -493,12 +487,20 @@ document.getElementById('searchInput').oninput=(e)=>{
   render();
 };
 
-document.getElementById('sortMissingBtn').onclick=()=>{
-  sortByMissing=!sortByMissing;
-  const btn=document.getElementById('sortMissingBtn');
-  btn.classList.toggle('sort-active',sortByMissing);
-  render();
-};
+document.querySelectorAll('.rf-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    const r=btn.dataset.rarity;
+    if(rarityFilter===r){
+      rarityFilter='';
+      btn.classList.remove('active');
+    }else{
+      rarityFilter=r;
+      document.querySelectorAll('.rf-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    render();
+  };
+});
 
 document.getElementById('exportBtn').onclick=()=>{
   const rows=[['Card ID','Card Name','Set','Rarity','Qty','Condition','Grader','Grade','Notes'].join('\t')];
@@ -510,7 +512,7 @@ document.getElementById('exportBtn').onclick=()=>{
       const rarity=c.r==='h'?'Holo':c.r==='g'?'Gold':'Regular';
       const grader=d.grader||'RAW';
       const grade=d.grade||'';
-      rows.push([c.id,c.nm,s.title,rarity,d.qty||1,(d.cond||[]).join(','),grader,grade,d.notes||''].join('\t'));
+      rows.push([c.id,c.nm,s.title,rarity,d.qty||0,(d.cond||[]).join(','),grader,grade,d.notes||''].join('\t'));
     });
   });
   const blob=new Blob([rows.join('\n')],{type:'text/tab-separated-values'});
