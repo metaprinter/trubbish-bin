@@ -98,10 +98,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pill{font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all .1s}
 .pill:hover{border-color:var(--border2);color:var(--text)}
 .pill.on{background:var(--red);border-color:var(--red);color:#fff}
-.errata-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border);align-items:center}
-.errata-label{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'DM Sans',sans-serif;margin-right:2px;white-space:nowrap}
-.pill.errata.on{background:var(--blue);border-color:var(--blue);color:#fff}
-.pill.errata:hover{border-color:var(--blue);color:var(--blue)}
 .remove-btn{display:flex;align-items:center;gap:4px;margin-top:8px;font-size:10px;font-weight:500;color:var(--muted);cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-family:'DM Sans',sans-serif;transition:all .15s;width:100%;justify-content:center}
 .remove-btn:hover{color:var(--red);border-color:var(--red);background:var(--red-dim)}
 .set-group.excluded .card-grid{filter:grayscale(1);opacity:0.35;pointer-events:none}
@@ -129,630 +125,763 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </style>
 </head>
 <body>
-  <div id="authScreen" class="auth-screen">
-  <img class="auth-logo" src="https://metaprinter.github.io/trubbish-bin/assets/img/header.jpeg">
-  <h1 class="auth-title">OP Leader Tracker</h1>
-  <p class="auth-sub">Manage your One Piece Card Game Leader collection and seamlessly sync adjustments to Google Sheets.</p>
-  <button id="authBtn" class="auth-btn">
-    <svg viewBox="0 0 24 24">
-      <path fill="#eceef4" d="M21.35,11.1H12v2.7h5.38c-0.23,1.28 -0.96,2.37 -2.04,3.1v2.58h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.48c0,-0.61 -0.06,-1.21 -0.16,-1.74z" />
-      <path fill="#eceef4" d="M12,21c2.43,0 4.47,-0.8 5.96,-2.18l-3.3,-2.58c-0.92,0.62 -2.1,0.98 -3.54,0.98c-2.34,0 -4.33,-1.58 -5.03,-3.72H2.7v2.66C4.18,18.15 7.84,21 12,21z" />
-      <path fill="#eceef4" d="M6.97,13.5c-0.18,-0.54 -0.28,-1.11 -0.28,-1.7c0,-0.59 0.1,-1.16 0.28,-1.7V7.44H2.7C2.08,8.68 1.73,10.08 1.73,11.5c0,1.42 0.35,2.82 0.97,4.06l4.27,-3.06z" />
-      <path fill="#eceef4" d="M12,5.74c1.32,0 2.51,0.45 3.44,1.35l2.58,-2.58C16.46,3.09 14.43,2.26 12,2.26c-4.14,0 -7.8,2.85 -9.3,6.18l4.27,3.3c0.7,-2.14 2.69,-3.72 5.03,-3.72z" />
-    </svg>
-    <span>Sign in with Google</span>
+
+<!-- AUTH SCREEN (shown until signed in) -->
+<div id="authScreen" class="auth-screen">
+  <img class="auth-logo" src="https://metaprinter.github.io/trubbish-bin/assets/img/header.jpeg" alt="SuperLuckyKat">
+  <div class="auth-title">The Trubbish Bin</div>
+  <div class="auth-sub">Sign in with Google to load your collection. Your data syncs automatically across every browser and device.</div>
+  <button class="auth-btn" id="signInBtn">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    Sign in with Google
   </button>
+  <div id="authError" style="font-size:12px;color:var(--red);margin-top:8px;display:none"></div>
 </div>
 
-<div id="appFrame" style="display:none;">
+<!-- MAIN APP (hidden until signed in) -->
+<div id="app" style="display:none">
   <header class="site-header">
-    <a href="#" class="logo-wrap" onclick="resetFilters(event)">
-      <img class="logo-img" src="https://metaprinter.github.io/trubbish-bin/assets/img/header.jpeg">
+    <a class="logo-wrap" href="index.html">
+      <img class="logo-img" src="https://metaprinter.github.io/trubbish-bin/assets/img/header.jpeg" alt="SuperLuckyKat">
       <div class="logo-text">
-        <span class="logo-top">CARD TRACKER</span>
-        <span class="logo-bot">TRUBBISH<span>BIN</span></span>
+        <span class="logo-top">No-Foil</span>
+        <span class="logo-bot">Leader <span>Tracker</span></span>
       </div>
     </a>
-    
     <div class="search-wrap">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="text" id="searchInput" placeholder="Search by name, ID, or color..." autocomplete="off">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search" placeholder="Search name or card ID…" autocomplete="off">
     </div>
-
     <div class="tabs">
-      <button class="tab active" onclick="filterType('all', this)">All</button>
-      <button class="tab" onclick="filterType('owned', this)">Owned</button>
-      <button class="tab" onclick="filterType('missing', this)">Missing</button>
+      <button class="tab active" data-tab="all">All</button>
+      <button class="tab" data-tab="owned">Owned</button>
+      <button class="tab" data-tab="missing">Missing</button>
     </div>
-
     <div class="hdr-right">
-      <span class="stat-badge">PROG: <strong id="globalProgress">0/0</strong> (<span id="globalPct">0%</span>)</span>
-      <span class="stat-badge">TOTAL QTY: <strong id="globalTotalQty" style="color:#eceef4;">0</strong></span>
-      <div class="sync-label"><span id="syncDot" class="sync-dot"></span><span id="syncStatus">Checking authentication...</span></div>
-      <button class="hdr-btn sort-active" id="sortBtn" onclick="toggleSortOrder()">SORT: SET ID</button>
-      <button class="hdr-btn export" onclick="exportToTSV()">EXPORT TSV</button>
-      <button class="hdr-btn export" onclick="triggerImport()">IMPORT TSV</button>
-      <input type="file" id="tsvImportInput" accept=".tsv" style="display:none;" onchange="handleImportFile(event)">
-      <button id="logoutBtn" class="hdr-btn danger">LOGOUT</button>
+      <span class="sync-dot" id="syncDot"></span>
+      <span class="sync-label" id="syncLabel">—</span>
+      <div class="stat-badge" id="stat"><strong>0</strong> / 0 owned</div>
+      <button class="hdr-btn export" id="exportBtn">↓ Export TSV</button>
+      <button class="hdr-btn" id="sortBtn" title="Sort sets by most missing first">Sort: Missing</button>
+      <label class="hdr-btn" id="importLabel" style="cursor:pointer">↑ Import TSV<input type="file" id="importFile" accept=".tsv" style="display:none"></label>
+      <button class="hdr-btn danger" id="signOutBtn">Sign out</button>
     </div>
   </header>
-
-  <div id="gapsPanel" class="gaps-panel"></div>
-  <main class="main" id="setsContainer"></main>
+  <div id="gapsPanel" class="gaps-panel" style="display:none"></div>
+  <main class="main" id="main"></main>
 </div>
 
-<div id="toast" class="toast"></div>
+<div class="toast" id="toast"></div>
+
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async></script>
 <script>
-// --- CORE CONFIGURATION & CONSTANTS ---
-const CONFIG = {
-  clientId: '934661811568-dksd8eiv7afrvevs463jbeebmfe99itq.apps.googleusercontent.com',
-  scopes: 'https://www.googleapis.com/auth/spreadsheets',
-  spreadsheetTitle: 'One Piece Card Game Tracker Data (Do Not Delete)',
-  sheetName: 'Leaders'
-};
+// ── CONFIG ── Replace CLIENT_ID with your OAuth 2.0 Client ID from Google Cloud Console
+const CLIENT_ID = '406228714733-s5jaq0bp4nl7uujdc35j51l8nj0cgagt.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const FOLDER_ID = '1Mf5sWIjDszg5UMgikmExaVWeeufCFVWB'; // SuperLuckyKat folder
+const FILE_NAME = 'op-leader-tracker.json';
 
-const SET_INFO = {
-  "OP-01": "Romance Dawn", "OP-02": "Paramount War", "OP-03": "Pillars of Strength",
-  "OP-04": "Kingdoms of Intrigue", "OP-05": "Awakening of the New Era", "OP-06": "Wings of the Captain",
-  "EB-01": "Extra Booster Memorial Collection", "OP-07": "500 Years into the Future", "OP-08": "Two Legends",
-  "OP-09": "The New Emperor", "OP-10": "A New Element", "PROMO": "Promotional / Special Cards"
-};
+// ── CARD DATA ──
+const CONDS=['NM','LP','MP','HP','D'];
+const CHEX={Red:'#ef4444',Green:'#22c55e',Blue:'#3b82f6',Purple:'#a855f7',Black:'#64748b',Yellow:'#eab308'};
+function stripeStyle(c){
+  if(!c)return'background:#64748b';
+  if(Array.isArray(c)){const a=CHEX[c[0]]||'#64748b',b=CHEX[c[1]]||'#64748b';return`background:linear-gradient(90deg,${a} 50%,${b} 50%)`;}
+  return`background:${CHEX[c]||'#64748b'}`;
+}
+const IMG='https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece';
+function stImg(id){const m=id.match(/^([A-Z]+)(\d+)-(\d+)$/);if(!m)return'';const[,p,n]=m;return`${IMG}/${p}${n.padStart(2,'0')}/${id}_EN.webp`;}
+function cardImg(c){if(c.img)return c.img;return stImg(c.id);}
 
-const COLOR_MAPS = {
-  "Red": "#E8272B", "Blue": "#2B7FCC", "Green": "#22c55e", 
-  "Purple": "#a855f7", "Black": "#1f2937", "Yellow": "#F5C842"
-};
+const STARTERS={key:'STARTERS',title:'Starter Decks',sub:'ST-01 through ST-29',cards:[
+  {id:'ST01-001',nm:'Monkey D. Luffy',c:'Red',set:'ST-01'},
+  {id:'ST02-001',nm:'Eustass Captain Kid',c:'Green',set:'ST-02'},
+  {id:'ST03-001',nm:'Crocodile',c:'Blue',set:'ST-03'},
+  {id:'ST04-001',nm:'Kaido',c:'Purple',set:'ST-04'},
+  {id:'ST05-001',nm:'Shanks',c:'Purple',set:'ST-05'},
+  {id:'ST06-001',nm:'Sakazuki',c:'Black',set:'ST-06'},
+  {id:'ST07-001',nm:'Charlotte Linlin',c:'Yellow',set:'ST-07'},
+  {id:'ST08-001',nm:'Monkey D. Luffy',c:'Black',set:'ST-08'},
+  {id:'ST09-001',nm:'Yamato',c:'Yellow',set:'ST-09'},
+  {id:'ST10-001',nm:'Trafalgar Law',c:['Red','Purple'],set:'ST-10'},
+  {id:'ST10-002',nm:'Monkey D. Luffy',c:['Red','Purple'],set:'ST-10'},
+  {id:'ST10-003',nm:'Eustass Captain Kid',c:['Red','Purple'],set:'ST-10'},
+  {id:'ST11-001',nm:'Uta',c:'Green',set:'ST-11'},
+  {id:'ST12-001',nm:'Zoro and Sanji',c:['Blue','Green'],set:'ST-12'},
+  {id:'ST13-001',nm:'Sabo',c:['Red','Yellow'],set:'ST-13'},
+  {id:'ST13-002',nm:'Portgas D. Ace',c:['Blue','Yellow'],set:'ST-13'},
+  {id:'ST13-003',nm:'Monkey D. Luffy',c:['Black','Yellow'],set:'ST-13'},
+  {id:'ST14-001',nm:'Monkey D. Luffy',c:'Black',set:'ST-14'},
+  {id:'ST15-001',nm:'Edward Newgate',c:'Red',set:'ST-15'},
+  {id:'ST16-001',nm:'Uta',c:'Green',set:'ST-16'},
+  {id:'ST17-001',nm:'Donquixote Doflamingo',c:'Blue',set:'ST-17'},
+  {id:'ST18-001',nm:'Monkey D. Luffy',c:'Purple',set:'ST-18'},
+  {id:'ST19-001',nm:'Smoker',c:'Black',set:'ST-19'},
+  {id:'ST20-001',nm:'Charlotte Katakuri',c:'Yellow',set:'ST-20'},
+  {id:'ST21-001',nm:'Monkey D. Luffy',c:'Purple',set:'ST-21'},
+  {id:'ST22-001',nm:'Portgas D. Ace',c:'Blue',set:'ST-22'},
+  {id:'ST23-001',nm:'Shanks',c:'Red',set:'ST-23'},
+  {id:'ST24-001',nm:'Jewelry Bonney',c:'Green',set:'ST-24'},
+  {id:'ST25-001',nm:'Buggy',c:'Blue',set:'ST-25'},
+  {id:'ST26-001',nm:'Monkey D. Luffy',c:['Purple','Black'],set:'ST-26'},
+  {id:'ST27-001',nm:'Marshall D. Teach',c:'Black',set:'ST-27'},
+  {id:'ST28-001',nm:'Yamato',c:['Green','Yellow'],set:'ST-28'},
+  {id:'ST29-001',nm:'Monkey D. Luffy',c:'Yellow',set:'ST-29'},
+]};
 
-// --- STATE MANAGEMENT ---
-let tokenClient = null;
-let gapiInited = false;
-let gapiAuthToken = null;
-let spreadsheetId = null;
-let masterMetadata = [];
-let userCollection = {};
-let currentTypeFilter = 'all';
-let currentSortOrder = 'id'; // 'id' or 'missing'
-let currentSearchQuery = '';
-let syncTimeout = null;
+// Booster set leaders from verified Google Sheets data
+const OP_SETS=[
+  {key:'OP01',title:'Romance Dawn',sub:'OP-01',cards:[
+    {id:'OP01-001',nm:'Roronoa Zoro',c:'Red',img:''},
+    {id:'OP01-002',nm:'Trafalgar Law',c:['Red','Green'],img:''},
+    {id:'OP01-003',nm:'Monkey.D.Luffy',c:['Red','Green'],img:''},
+    {id:'OP01-031',nm:'Kouzuki Oden',c:'Green',img:''},
+    {id:'OP01-060',nm:'Donquixote Doflamingo',c:'Blue',img:''},
+    {id:'OP01-061',nm:'Kaido',c:['Blue','Purple'],img:''},
+    {id:'OP01-062',nm:'Crocodile',c:['Blue','Purple'],img:''},
+    {id:'OP01-091',nm:'King',c:'Purple',img:''},
+  ]},
+  {key:'OP02',title:'Paramount War',sub:'OP-02',cards:[
+    {id:'OP02-001',nm:'Edward.Newgate',c:'Red',img:''},
+    {id:'OP02-002',nm:'Monkey.D.Garp',c:['Red','Black'],img:''},
+    {id:'OP02-025',nm:'Kin\'emon',c:'Green',img:''},
+    {id:'OP02-026',nm:'Sanji',c:['Green','Blue'],img:''},
+    {id:'OP02-049',nm:'Emporio.Ivankov',c:'Blue',img:''},
+    {id:'OP02-071',nm:'Magellan',c:'Purple',img:''},
+    {id:'OP02-072',nm:'Zephyr',c:['Purple','Black'],img:''},
+    {id:'OP02-093',nm:'Smoker',c:'Black',img:''},
+  ]},
+  {key:'OP03',title:'Pillars of Strength',sub:'OP-03',cards:[
+    {id:'OP03-001',nm:'Portgas.D.Ace',c:'Red',img:''},
+    {id:'OP03-021',nm:'Kuro',c:'Green',img:''},
+    {id:'OP03-022',nm:'Arlong',c:['Green','Yellow'],img:''},
+    {id:'OP03-040',nm:'Nami',c:'Blue',img:''},
+    {id:'OP03-058',nm:'Iceburg',c:'Purple',img:''},
+    {id:'OP03-076',nm:'Rob Lucci',c:'Black',img:''},
+    {id:'OP03-077',nm:'Charlotte Linlin',c:'Black',img:''},
+    {id:'OP03-099',nm:'Charlotte Katakuri',c:'Yellow',img:''},
+  ]},
+  {key:'OP04',title:'Kingdoms of Intrigue',sub:'OP-04',cards:[
+    {id:'OP04-001',nm:'Nefeltari Vivi',c:['Red','Blue'],img:''},
+    {id:'OP04-019',nm:'Donquixote Doflamingo',c:['Green','Purple'],img:''},
+    {id:'OP04-020',nm:'Issho',c:['Green','Black'],img:''},
+    {id:'OP04-039',nm:'Rebecca',c:['Blue','Black'],img:''},
+    {id:'OP04-040',nm:'Queen',c:['Blue','Yellow'],img:''},
+    {id:'OP04-058',nm:'Crocodile',c:['Purple','Yellow'],img:''},
+  ]},
+  {key:'OP05',title:'Awakening of the New Era',sub:'OP-05',cards:[
+    {id:'OP05-001',nm:'Sabo',c:['Red','Black'],img:''},
+    {id:'OP05-002',nm:'Belo Betty',c:['Red','Yellow'],img:''},
+    {id:'OP05-022',nm:'Donquixote Rosinante',c:['Green','Blue'],img:''},
+    {id:'OP05-041',nm:'Sakazuki',c:['Blue','Black'],img:''},
+    {id:'OP05-060',nm:'Monkey.D.Luffy',c:'Purple',img:''},
+    {id:'OP05-098',nm:'Enel',c:'Yellow',img:''},
+  ]},
+  {key:'OP06',title:'Wings of the Captain',sub:'OP-06',cards:[
+    {id:'OP06-001',nm:'Uta',c:['Red','Purple'],img:''},
+    {id:'OP06-020',nm:'Hody Jones',c:'Green',img:''},
+    {id:'OP06-021',nm:'Perona',c:['Green','Black'],img:''},
+    {id:'OP06-022',nm:'Yamato',c:['Green','Yellow'],img:''},
+    {id:'OP06-042',nm:'Vinsmoke Reiju',c:['Blue','Purple'],img:''},
+    {id:'OP06-080',nm:'Gecko Moria',c:'Black',img:''},
+  ]},
+  {key:'OP07',title:'500 Years in the Future',sub:'OP-07',cards:[
+    {id:'OP07-001',nm:'Monkey.D.Dragon',c:'Red',img:''},
+    {id:'OP07-019',nm:'Jewelry Bonney',c:'Green',img:''},
+    {id:'OP07-038',nm:'Boa Hancock',c:'Blue',img:''},
+    {id:'OP07-059',nm:'Foxy',c:'Purple',img:''},
+    {id:'OP07-079',nm:'Rob Lucci',c:'Black',img:''},
+    {id:'OP07-097',nm:'Vegapunk',c:'Yellow',img:''},
+  ]},
+  {key:'OP08',title:'Two Legends',sub:'OP-08',cards:[
+    {id:'OP08-001',nm:'Tony Tony.Chopper',c:['Red','Green'],img:''},
+    {id:'OP08-002',nm:'Marco',c:['Red','Blue'],img:''},
+    {id:'OP08-021',nm:'Carrot',c:'Green',img:''},
+    {id:'OP08-057',nm:'King',c:['Purple','Black'],img:''},
+    {id:'OP08-058',nm:'Charlotte Pudding',c:['Purple','Yellow'],img:''},
+    {id:'OP08-098',nm:'Kalgara',c:'Yellow',img:''},
+  ]},
+  {key:'OP09',title:'Emperors in the New World',sub:'OP-09',cards:[
+    {id:'OP09-001',nm:'Shanks',c:'Red',img:''},
+    {id:'OP09-022',nm:'Lim',c:['Green','Purple'],img:''},
+    {id:'OP09-042',nm:'Buggy',c:'Blue',img:''},
+    {id:'OP09-061',nm:'Monkey.D.Luffy',c:['Purple','Black'],img:''},
+    {id:'OP09-062',nm:'Nico Robin',c:['Purple','Yellow'],img:''},
+    {id:'OP09-081',nm:'Marshall.D.Teach',c:'Black',img:''},
+  ]},
+  {key:'OP10',title:'Royal Blood',sub:'OP-10',cards:[
+    {id:'OP10-001',nm:'Smoker',c:['Red','Green'],img:''},
+    {id:'OP10-002',nm:'Caesar Clown',c:['Red','Blue'],img:''},
+    {id:'OP10-003',nm:'Sugar',c:['Red','Purple'],img:''},
+    {id:'OP10-022',nm:'Trafalgar Law',c:['Green','Yellow'],img:''},
+    {id:'OP10-042',nm:'Usopp',c:['Blue','Black'],img:''},
+    {id:'OP10-099',nm:'Eustass \"Captain\" Kid',c:'Yellow',img:''},
+  ]},
+  {key:'OP11',title:'A Fist of Divine Speed',sub:'OP-11',cards:[
+    {id:'OP11-001',nm:'Koby',c:['Red','Black'],img:''},
+    {id:'OP11-021',nm:'Jinbe',c:'Green',img:''},
+    {id:'OP11-022',nm:'Shirahoshi',c:['Green','Yellow'],img:''},
+    {id:'OP11-040',nm:'Monkey.D.Luffy',c:['Blue','Purple'],img:''},
+    {id:'OP11-041',nm:'Nami',c:['Blue','Yellow'],img:''},
+    {id:'OP11-062',nm:'Charlotte Katakuri',c:'Purple',img:''},
+  ]},
+  {key:'OP12',title:'Legacy of the Master',sub:'OP-12',cards:[
+    {id:'OP12-001',nm:'Silvers Rayleigh',c:'Red',img:''},
+    {id:'OP12-020',nm:'Roronoa Zoro',c:'Green',img:''},
+    {id:'OP12-040',nm:'Kuzan',c:'Blue',img:''},
+    {id:'OP12-041',nm:'Sanji',c:['Blue','Purple'],img:''},
+    {id:'OP12-061',nm:'Donquixote Rosinante',c:['Purple','Yellow'],img:''},
+    {id:'OP12-081',nm:'Koala',c:['Black','Yellow'],img:''},
+  ]},
+  {key:'OP13',title:'Carrying On His Will',sub:'OP-13',cards:[
+    {id:'OP13-001',nm:'Monkey.D.Luffy',c:['Red','Green'],img:''},
+    {id:'OP13-002',nm:'Portgas.D.Ace',c:['Red','Blue'],img:''},
+    {id:'OP13-003',nm:'Gol.D.Roger',c:['Red','Purple'],img:''},
+    {id:'OP13-004',nm:'Sabo',c:['Red','Black'],img:''},
+    {id:'OP13-079',nm:'Imu',c:'Black',img:''},
+    {id:'OP13-100',nm:'Jewelry Bonney',c:'Yellow',img:''},
+  ]},
+  {key:'OP14',title:'The Azure Sea\'s Seven',sub:'OP-14',cards:[
+    {id:'OP14-001',nm:'Trafalgar Law',c:'Red',img:''},
+    {id:'OP14-020',nm:'Dracule Mihawk',c:'Green',img:''},
+    {id:'OP14-040',nm:'Jinbe',c:'Blue',img:''},
+    {id:'OP14-041',nm:'Boa Hancock',c:['Blue','Yellow'],img:''},
+    {id:'OP14-060',nm:'Donquixote Doflamingo',c:'Purple',img:''},
+    {id:'OP14-079',nm:'Crocodile',c:'Black',img:''},
+    {id:'OP14-080',nm:'Gecko Moria',c:['Black','Yellow'],img:''},
+  ]},
+  {key:'OP15',title:'Adventure on Kami\'s Island',sub:'OP-15',cards:[
+    {id:'OP15-001',nm:'Krieg',c:['Red','Green'],img:''},
+    {id:'OP15-002',nm:'Lucy',c:['Red','Blue'],img:''},
+    {id:'OP15-022',nm:'Brook',c:['Green','Black'],img:''},
+    {id:'OP15-039',nm:'Rebecca',c:'Blue',img:''},
+    {id:'OP15-058',nm:'Enel',c:'Purple',img:''},
+    {id:'OP15-098',nm:'Monkey.D.Luffy',c:'Yellow',img:''},
+  ]},
+  {key:'PROMO',title:'Promo Leaders',sub:'P-L · Event & Special Promos',cards:[
+    {id:'P-001',nm:'Monkey.D.Luffy',c:['Red','Green','Blue','Purple','Black','Yellow'],img:'https://tcgplayer-cdn.tcgplayer.com/product/552137_in_1000x1000.jpg'},
+  ]},
+  {key:'PRB01',title:'Premium Best',sub:'PRB-01',cards:[
+    {id:'PRB01-001',nm:'Sanji',c:'Red',img:'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/PRB01/PRB01-001_EN.webp'},
+  ]},
+  {key:'EB01',title:'Memorial Collection',sub:'EB-01',cards:[
+    {id:'EB01-001',nm:'Kouzuki Oden',c:'Red',img:'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/EB01/EB01-001_EN.webp'},
+    {id:'EB01-021',nm:'Hannyabal',c:['Purple','Black'],img:'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/EB01/EB01-021_EN.webp'},
+    {id:'EB01-040',nm:'Kyros',c:['Red','Blue'],img:'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/EB01/EB01-040_EN.webp'},
+  ]},
+  {key:'EB02',title:'Anime 25th Collection',sub:'EB-02',cards:[
+    {id:'EB02-010',nm:'Monkey D. Luffy',c:['Green','Purple'],img:'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/EB02/EB02-010_EN.webp'},
+  ]},
+  {key:'EB03',title:'Heroines Edition',sub:'EB-03',cards:[
+    {id:'EB03-001',nm:'Nefeltari Vivi',c:['Red','Blue'],img:'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/EB03/EB03-001_EN.webp'},
+  ]},
+  {key:'EB04',title:'Egghead Crisis',sub:'EB-04',cards:[
+    {id:'EB04-001',nm:'Jewelry Bonney',c:['Red','Yellow'],img:'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/one-piece/EB04/EB04-001_EN.webp'},
+  ]},
+];
 
-// --- INITIALIZATION ---
-function initGapi() {
-  gapi.load('client', async () => {
-    await gapi.client.init({});
-    gapiInited = true;
-    checkStoredToken();
-  });
+const SETS=[STARTERS,...OP_SETS];
+
+// ── STATE ──
+let data={}, curTab='all', curSearch='', sortMissing=false;
+let stExcluded=localStorage.getItem('slk-st-excluded')!=='false'; // default excluded
+let driveFileId=null, saveTimer=null, tokenClient=null, accessToken=null;
+
+// ── SYNC UI ──
+function setSyncState(state,label){
+  const dot=document.getElementById('syncDot');
+  const lbl=document.getElementById('syncLabel');
+  dot.className='sync-dot '+(state||'');
+  lbl.textContent=label||'';
 }
 
-function initGis() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CONFIG.clientId,
-    scope: CONFIG.scopes,
-    callback: handleAuthResponse,
-  });
+// ── DRIVE REST API (pure fetch, no gapi.client) ──
+const DRIVE='https://www.googleapis.com/drive/v3';
+const UPLOAD='https://www.googleapis.com/upload/drive/v3';
+
+function authHeaders(){
+  return {Authorization:'Bearer '+accessToken,'Content-Type':'application/json'};
 }
 
-async function checkStoredToken() {
-  const stored = localStorage.getItem('op_tracker_token');
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    if (parsed.expiresAt > Date.now()) {
-      gapiAuthToken = parsed.token;
-      gapi.client.setToken({ access_token: gapiAuthToken });
-      setSyncStatus('authenticated', 'Signed in');
-      document.getElementById('authScreen').style.display = 'none';
-      document.getElementById('appFrame').style.display = 'block';
-      await loadTrackerData();
+async function driveGet(path,params={}){
+  const url=new URL(DRIVE+path);
+  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+  const r=await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
+  if(!r.ok)throw new Error('Drive GET '+path+' failed: '+r.status);
+  return r;
+}
+
+async function findOrCreateFile(){
+  const r=await driveGet('/files',{
+    q:`name='${FILE_NAME}' and '${FOLDER_ID}' in parents and trashed=false`,
+    fields:'files(id,name,modifiedTime)',
+    orderBy:'modifiedTime desc',
+    spaces:'drive'
+  });
+  const json=await r.json();
+  const files=json.files||[];
+  if(files.length>0){
+    driveFileId=files[0].id;
+    // Delete any dupes
+    for(let i=1;i<files.length;i++){
+      try{await fetch(DRIVE+'/files/'+files[i].id,{method:'DELETE',headers:{Authorization:'Bearer '+accessToken}});}catch(e){}
+    }
+    return driveFileId;
+  }
+  // Create new file with empty JSON content
+  const boundary='slk_boundary_'+Date.now();
+  const meta=JSON.stringify({name:FILE_NAME,parents:[FOLDER_ID]});
+  const body=`--${boundary}
+Content-Type: application/json; charset=UTF-8
+
+${meta}
+--${boundary}
+Content-Type: application/json
+
+{}
+--${boundary}--`;
+  const cr=await fetch(UPLOAD+'/files?uploadType=multipart',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},
+    body
+  });
+  if(!cr.ok)throw new Error('Create file failed: '+cr.status);
+  const created=await cr.json();
+  driveFileId=created.id;
+  return driveFileId;
+}
+
+async function loadFromDrive(){
+  setSyncState('syncing','Loading…');
+  try{
+    await ensureFreshToken();
+    await findOrCreateFile();
+    // Fetch file content as text directly
+    let r=await fetch(DRIVE+'/files/'+driveFileId+'?alt=media',{
+      headers:{Authorization:'Bearer '+accessToken}
+    });
+    // Retry once on auth failure
+    if(r.status===401||r.status===403){
+      try{await refreshToken();}catch(e){}
+      r=await fetch(DRIVE+'/files/'+driveFileId+'?alt=media',{
+        headers:{Authorization:'Bearer '+accessToken}
+      });
+    }
+    if(!r.ok)throw new Error('Read failed: '+r.status);
+    const text=(await r.text()).trim();
+    if(text&&text!=='{}'){
+      let parsed;
+      try{
+        parsed=JSON.parse(text);
+      }catch(e){
+        // File may be base64-encoded from a previous broken upload — decode it
+        try{
+          parsed=JSON.parse(atob(text));
+          // Immediately re-save as clean JSON so this only triggers once
+          data=parsed;
+          await saveToDrive();
+        }catch(e2){
+          console.error('Could not parse file content:',e2);
+          parsed={};
+        }
+      }
+      data=parsed||{};
+    }else{
+      data={};
+    }
+    setSyncState('saved','Synced');
+    render();
+    showApp();
+  }catch(e){
+    console.error('Drive load error',e);
+    setSyncState('error','Load failed: '+e.message);
+    data={};
+    render();
+    showApp();
+  }
+}
+
+async function saveToDrive(){
+  if(!driveFileId)return;
+  setSyncState('syncing','Saving…');
+  try{
+    await ensureFreshToken();
+    const r=await fetch(UPLOAD+'/files/'+driveFileId+'?uploadType=media',{
+      method:'PATCH',
+      headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    });
+    if(r.status===401||r.status===403){
+      // Token truly expired and silent refresh didn't work — prompt user
+      setSyncState('error','Session expired');
+      document.getElementById('syncLabel').style.cursor='pointer';
+      document.getElementById('syncLabel').title='Click to re-authenticate';
+      document.getElementById('syncLabel').onclick=()=>tokenClient.requestAccessToken({prompt:''});
       return;
     }
+    if(!r.ok)throw new Error('Save failed: '+r.status);
+    document.getElementById('syncLabel').style.cursor='';
+    document.getElementById('syncLabel').onclick=null;
+    setSyncState('saved','Saved ✓');
+    setTimeout(()=>setSyncState('saved','Synced'),1500);
+  }catch(e){
+    console.error('Drive save error',e);
+    setSyncState('error','Save failed — click to retry');
+    document.getElementById('syncLabel').style.cursor='pointer';
+    document.getElementById('syncLabel').onclick=()=>{
+      document.getElementById('syncLabel').onclick=null;
+      saveToDrive();
+    };
   }
-  showAuthScreen();
 }
 
-function showAuthScreen() {
-  document.getElementById('appFrame').style.display = 'none';
-  document.getElementById('authScreen').style.display = 'flex';
+function scheduleSave(){
+  if(saveTimer)clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveToDrive,1200);
 }
 
-function handleAuthResponse(resp) {
-  if (resp.error) {
-    setSyncStatus('error', 'Authentication failed');
+// ── AUTH ──
+let tokenExpiry=0; // unix ms when token expires
+
+function refreshToken(){
+  return new Promise((resolve,reject)=>{
+    tokenClient.callback=async(resp)=>{
+      if(resp.error){reject(new Error(resp.error));return;}
+      accessToken=resp.access_token;
+      tokenExpiry=Date.now()+(resp.expires_in||3500)*1000;
+      resolve();
+    };
+    tokenClient.requestAccessToken({prompt:''});
+  });
+}
+
+async function ensureFreshToken(){
+  // Refresh if token expires in less than 10 minutes
+  if(!accessToken||Date.now()>tokenExpiry-600000){
+    try{await refreshToken();}
+    catch(e){
+      console.warn('Token refresh failed:',e);
+    }
+  }
+}
+
+let refreshInterval=null;
+function startTokenRefreshTimer(){
+  if(refreshInterval)clearInterval(refreshInterval);
+  refreshInterval=setInterval(async()=>{
+    if(!accessToken||Date.now()>tokenExpiry-600000){
+      try{await refreshToken();console.log('Token refreshed proactively');}
+      catch(e){console.warn('Proactive refresh failed:',e);}
+    }
+  },5*60*1000); // check every 5 min
+}
+
+function initAuth(){
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID,
+    scope:SCOPES,
+    callback:async(resp)=>{
+      if(resp.error){
+        document.getElementById('authError').textContent='Sign in failed: '+resp.error;
+        document.getElementById('authError').style.display='block';
+        return;
+      }
+      accessToken=resp.access_token;
+      tokenExpiry=Date.now()+(resp.expires_in||3500)*1000;
+      startTokenRefreshTimer();
+      await loadFromDrive();
+    }
+  });
+}
+
+document.getElementById('signInBtn').addEventListener('click',()=>{
+  if(!tokenClient){
+    document.getElementById('authError').textContent='Google API not loaded yet. Please wait a moment and try again.';
+    document.getElementById('authError').style.display='block';
     return;
   }
-  gapiAuthToken = resp.access_token;
-  localStorage.setItem('op_tracker_token', JSON.stringify({
-    token: gapiAuthToken,
-    expiresAt: Date.now() + (resp.expires_in * 1000)
-  }));
-  setSyncStatus('authenticated', 'Signed in');
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('appFrame').style.display = 'block';
-  loadTrackerData();
-}
-
-document.getElementById('authBtn').addEventListener('click', () => {
-  if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+  tokenClient.requestAccessToken({prompt:'select_account'});
 });
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.removeItem('op_tracker_token');
-  gapiAuthToken = null;
-  spreadsheetId = null;
-  userCollection = {};
-  showAuthScreen();
+document.getElementById('signOutBtn').addEventListener('click',()=>{
+  if(accessToken){google.accounts.oauth2.revoke(accessToken,()=>{});}
+  accessToken=null;driveFileId=null;data={};
+  document.getElementById('app').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
 });
 
-// --- GOOGLE SHEETS INTERACTION ---
-async function loadTrackerData() {
-  setSyncStatus('syncing', 'Loading application metadata...');
-  try {
-    const metaResp = await fetch('https://metaprinter.github.io/trubbish-bin/assets/json/op-leaders.json');
-    masterMetadata = await metaResp.json();
-    
-    setSyncStatus('syncing', 'Connecting to Google Drive...');
-    spreadsheetId = localStorage.getItem('op_tracker_sp_id');
-    if (!spreadsheetId) {
-      spreadsheetId = await findOrCreateSpreadsheet();
-      localStorage.setItem('op_tracker_sp_id', spreadsheetId);
+function showApp(){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+
+// Wait for Google Identity Services to load (no gapi needed)
+window.addEventListener('load',()=>{
+  const waitGsi=()=>new Promise(resolve=>{
+    if(window.google&&google.accounts)return resolve();
+    const t=setInterval(()=>{if(window.google&&google.accounts){clearInterval(t);resolve();}},100);
+  });
+  waitGsi().then(initAuth);
+});
+
+// ── CARD LOGIC ──
+function toggleCard(id){if(data[id])return;data[id]={qty:1,conds:['NM']};scheduleSave();render();}
+function removeCard(e,id){
+  e.stopPropagation();
+  if(!confirm('Remove '+id+' from your collection?'))return;
+  delete data[id];scheduleSave();render();
+}
+function setQty(e,id,delta){
+  e.stopPropagation();if(!data[id])return;
+  data[id].qty=Math.max(1,(data[id].qty||1)+delta);scheduleSave();
+  const el=document.getElementById('qv-'+id);if(el)el.textContent=data[id].qty;
+}
+function toggleCond(e,id,c){
+  e.stopPropagation();if(!data[id])return;
+  const cs=data[id].conds||[];const i=cs.indexOf(c);
+  if(i>=0)cs.splice(i,1);else cs.push(c);
+  data[id].conds=cs;scheduleSave();
+  document.querySelectorAll(`[data-pill="${id}-${c}"]`).forEach(p=>{p.className='pill'+(cs.includes(c)?' on':'');});
+}
+
+function cardHTML(c){
+  const d=data[c.id],owned=!!d;
+  const imgSrc=cardImg(c);
+  const setTag=c.set?`<span class="set-tag">${c.set}</span>`:'';
+  const pills=CONDS.map(x=>`<span class="pill${d&&(d.conds||[]).includes(x)?' on':''}" data-pill="${c.id}-${x}" data-c="${x}" onclick="toggleCond(event,'${c.id}','${x}')">${x}</span>`).join('');
+  return`<div class="card${owned?' owned':''}" id="c-${c.id}"${owned?'':` onclick="toggleCard('${c.id}')"`}>
+  <div class="card-img-wrap">
+    <div class="img-ph"><span class="img-ph-id">${c.id}</span></div>
+    ${imgSrc?`<img src="${imgSrc}" alt="${c.nm}" class="loading" onload="this.classList.remove('loading')" onerror="this.style.display='none'">`:''}
+    <div class="owned-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+  </div>
+  <div class="color-stripe" style="${stripeStyle(c.c)}"></div>
+  <div class="card-body">
+    <div class="card-meta">${setTag}<span class="card-id">${c.id}</span></div>
+    <div class="card-name">${c.nm}</div>
+    <div class="card-detail">
+      <div class="qty-row"><span class="qty-label">Qty</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="setQty(event,'${c.id}',-1)">−</button>
+          <span class="qty-val" id="qv-${c.id}">${d?d.qty:1}</span>
+          <button class="qty-btn" onclick="setQty(event,'${c.id}',1)">+</button>
+        </div>
+      </div>
+      <div class="cond-pills">${pills}</div>
+      <button class="remove-btn" onclick="removeCard(event,'${c.id}')">✕ Remove</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function filtered(cards){
+  let list=cards;
+  if(curSearch)list=list.filter(c=>c.nm.toLowerCase().includes(curSearch)||c.id.toLowerCase().includes(curSearch)||(c.set||'').toLowerCase().includes(curSearch));
+  if(curTab==='owned')list=list.filter(c=>data[c.id]);
+  if(curTab==='missing')list=list.filter(c=>!data[c.id]);
+  return list;
+}
+
+function renderGapsPanel(boosterSets, starterSet, promoSet) {
+  const panel = document.getElementById('gapsPanel');
+  const chips = [];
+  const allSets = [...boosterSets];
+  if (starterSet && !stExcluded) allSets.push(starterSet);
+  if (promoSet) allSets.push(promoSet);
+
+  let anyMissing = false;
+  for (const grp of allSets) {
+    const total = grp.cards.length;
+    const owned = grp.cards.filter(c => data[c.id]).length;
+    const missing = total - owned;
+    if (missing > 0) anyMissing = true;
+    if (missing > 0) {
+      chips.push(`<a class="gap-chip" href="#set-${grp.key}" onclick="event.preventDefault();document.getElementById('set-${grp.key}')?.scrollIntoView({behavior:'smooth',block:'start'})"><span class="gap-label">${grp.sub||grp.key}</span><span class="gap-count">${missing} left</span></a>`);
+    } else if (total > 0) {
+      chips.push(`<span class="gap-chip done"><span class="gap-label">${grp.sub||grp.key}</span><span class="gap-count">✓</span></span>`);
     }
-    
-    await fetchUserCollection();
-    buildGapsPanel();
-    renderDOM();
-    setSyncStatus('saved', 'All changes saved');
-  } catch (err) {
-    console.error(err);
-    setSyncStatus('error', 'Error syncing storage configuration');
-  }
-}
-
-async function findOrCreateSpreadsheet() {
-  const listResp = await gapi.client.request({
-    path: 'https://www.googleapis.com/drive/v3/files',
-    method: 'GET',
-    params: { q: `name='${CONFIG.spreadsheetTitle}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false` }
-  });
-  if (listResp.result.files && listResp.result.files.length > 0) {
-    return listResp.result.files[0].id;
-  }
-  const createResp = await gapi.client.request({
-    path: 'https://sheets.googleapis.com/v4/spreadsheets',
-    method: 'POST',
-    body: { properties: { title: CONFIG.spreadsheetTitle } }
-  });
-  const spId = createResp.result.spreadsheetId;
-  await gapi.client.request({
-    path: `https://sheets.googleapis.com/v4/spreadsheets/${spId}/sheets:batchUpdate`,
-    method: 'POST',
-    body: { requests: [{ addSheet: { properties: { title: CONFIG.sheetName } } }, { deleteSheet: { sheetId: 0 } }] }
-  });
-  return spId;
-}
-
-async function fetchUserCollection() {
-  try {
-    const resp = await gapi.client.request({
-      path: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${CONFIG.sheetName}!A:D`,
-      method: 'GET'
-    });
-    const rows = resp.result.values;
-    userCollection = {};
-    if (rows && rows.length > 1) {
-      for (let i = 1; i < rows.length; i++) {
-        const [id, qty, conds, errata] = rows[i];
-        if (id) {
-          userCollection[id] = {
-            qty: parseInt(qty) || 1,
-            conds: conds ? conds.split(',').map(s => s.trim()) : ['NM'],
-            errata: errata ? errata.split(',').map(s => s.trim()) : []
-          };
-        }
-      }
-    }
-  } catch (e) {
-    userCollection = {};
-  }
-}
-
-function queueCloudSync() {
-  setSyncStatus('syncing', 'Drafting internal changes...');
-  if (syncTimeout) clearTimeout(syncTimeout);
-  syncTimeout = setTimeout(executeCloudSync, 1500);
-}
-
-async function executeCloudSync() {
-  setSyncStatus('syncing', 'Pushing edits to cloud sheet...');
-  try {
-    const outputRows = [['Card ID', 'Qty', 'Conditions', 'Errata']];
-    Object.keys(userCollection).forEach(id => {
-      const entry = userCollection[id];
-      outputRows.push([id, entry.qty, entry.conds.join(', '), entry.errata.join(', ')]);
-    });
-    await gapi.client.request({
-      path: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${CONFIG.sheetName}!A1?valueInputOption=USER_ENTERED`,
-      method: 'PUT',
-      body: { values: outputRows }
-    });
-    await gapi.client.request({
-      path: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${CONFIG.sheetName}!A${outputRows.length + 1}:D1000`,
-      method: 'CLEAR'
-    });
-    setSyncStatus('saved', 'All adjustments uploaded successfully');
-  } catch (err) {
-    setSyncStatus('error', 'Error writing to destination storage asset');
-  }
-}
-
-// --- APP UTILITIES & RENDERING ---
-function setSyncStatus(state, label) {
-  const dot = document.getElementById('syncDot');
-  const txt = document.getElementById('syncStatus');
-  dot.className = 'sync-dot ' + state;
-  txt.innerText = label;
-}
-
-function buildGapsPanel() {
-  const container = document.getElementById('gapsPanel');
-  container.innerHTML = '<span class="gaps-panel-label">Missing Targets:</span>';
-  
-  const setCounts = {};
-  masterMetadata.forEach(c => { if(!userCollection[c.id]) setCounts[c.set] = (setCounts[c.set] || 0) + 1; });
-  
-  Object.keys(SET_INFO).forEach(sKey => {
-    const missingCount = setCounts[sKey] || 0;
-    const chip = document.createElement('a');
-    chip.href = '#' + sKey;
-    chip.className = 'gap-chip' + (missingCount === 0 ? ' done' : '');
-    chip.innerHTML = `<span class="gap-label">${sKey}</span>:<span class="gap-count">${missingCount === 0 ? '✓' : missingCount}</span>`;
-    container.appendChild(chip);
-  });
-}
-
-function renderDOM() {
-  const container = document.getElementById('setsContainer');
-  container.innerHTML = '';
-  
-  const query = currentSearchQuery.toLowerCase().trim();
-  const excludedSets = JSON.parse(localStorage.getItem('op_tracker_excluded_sets') || '[]');
-
-  // Group cards by structural set identifier
-  const groupedCards = {};
-  Object.keys(SET_INFO).forEach(s => groupedCards[s] = []);
-  
-  masterMetadata.forEach(card => {
-    const isOwned = !!userCollection[card.id];
-    if (currentTypeFilter === 'owned' && !isOwned) return;
-    if (currentTypeFilter === 'missing' && isOwned) return;
-    
-    if (query) {
-      const matchName = card.name.toLowerCase().includes(query);
-      const matchId = card.id.toLowerCase().includes(query);
-      const matchColor = card.color.some(c => c.toLowerCase().includes(query));
-      if (!matchName && !matchId && !matchColor) return;
-    }
-    
-    if (groupedCards[card.set]) groupedCards[card.set].push(card);
-  });
-
-  let overallTotal = 0;
-  let overallOwned = 0;
-  let aggregateQty = 0;
-
-  masterMetadata.forEach(c => {
-    overallTotal++;
-    if (userCollection[c.id]) {
-      overallOwned++;
-      aggregateQty += userCollection[c.id].qty;
-    }
-  });
-
-  document.getElementById('globalProgress').innerText = `${overallOwned}/${overallTotal}`;
-  document.getElementById('globalPct').innerText = overallTotal ? Math.round((overallOwned / overallTotal) * 100) + '%' : '0%';
-  document.getElementById('globalTotalQty').innerText = aggregateQty;
-
-  let flatGroups = [];
-  Object.keys(groupedCards).forEach(sKey => {
-    const cards = groupedCards[sKey];
-    if (cards.length === 0 && !query) return;
-    
-    const isExcluded = excludedSets.includes(sKey);
-    let totalSetCards = masterMetadata.filter(c => c.set === sKey).length;
-    let ownedSetCards = masterMetadata.filter(c => c.set === sKey && userCollection[c.id]).length;
-    let pct = totalSetCards ? Math.round((ownedSetCards / totalSetCards) * 100) : 0;
-    
-    flatGroups.push({ sKey, cards, isExcluded, ownedSetCards, totalSetCards, pct });
-  });
-
-  if (currentSortOrder === 'missing') {
-    flatGroups.sort((a, b) => {
-      let aRemaining = a.totalSetCards - a.ownedSetCards;
-      let bRemaining = b.totalSetCards - b.ownedSetCards;
-      if (aRemaining !== bRemaining) return bRemaining - aRemaining;
-      return a.sKey.localeCompare(b.sKey);
-    });
   }
 
-  if (flatGroups.length === 0) {
-    container.innerHTML = '<div class="empty">No matching ledger records mapped to filter query parameters.</div>';
+  if (!anyMissing || chips.length === 0) {
+    panel.style.display = 'none';
     return;
   }
+  panel.style.display = 'flex';
+  panel.innerHTML = `<span class="gaps-panel-label">Gaps →</span>${chips.join('')}`;
+}
 
-  flatGroups.forEach(g => {
-    if (currentSortOrder === 'missing') {
-      g.cards.sort((a, b) => {
-        const aOwned = !!userCollection[a.id];
-        const bOwned = !!userCollection[b.id];
-        if (aOwned !== bOwned) return aOwned ? 1 : -1;
-        return a.id.localeCompare(b.id);
-      });
-    } else {
-      g.cards.sort((a, b) => a.id.localeCompare(b.id));
-    }
+function render(){
+  const main=document.getElementById('main');
+  let tAll=0,tOwned=0,html='',any=false;
 
-    const section = document.createElement('section');
-    section.id = g.sKey;
-    section.className = `set-group ${g.sKey === 'PROMO' ? 'promo' : ''} ${g.isExcluded ? 'excluded' : ''}`;
-    
-    const header = document.createElement('div');
-    header.className = 'set-header';
-    header.innerHTML = `
-      <div>
-        <h2 class="set-title">${g.sKey} — ${SET_INFO[g.sKey] || 'Special Releases'}</h2>
-        <span class="set-sub">${g.ownedSetCards} of ${g.totalSetCards} Collected</span>
-      </div>
-      <button class="st-toggle ${g.isExcluded ? 'excluded' : 'included'}" onclick="toggleSetExclusion('${g.sKey}')">
-        ${g.isExcluded ? 'TRACKING OFF' : 'TRACKING ON'}
-      </button>
-      <div class="set-progress">
-        <div class="progress-track"><div class="progress-fill" style="width: ${g.pct}%"></div></div>
-        <span class="progress-pct">${g.ownedSetCards}/${g.totalSetCards} (${g.pct}%)</span>
-      </div>
-    `;
-    section.appendChild(header);
+  const boosterSets=SETS.filter(g=>g.key!=='STARTERS'&&g.key!=='PROMO');
+  const starterSet=SETS.find(g=>g.key==='STARTERS');
+  const promoSet=SETS.find(g=>g.key==='PROMO');
 
-    const grid = document.createElement('div');
-    grid.className = 'card-grid';
-
-    g.cards.forEach(card => {
-      const entry = userCollection[card.id];
-      const isOwned = !!entry;
-      const cardEl = document.createElement('div');
-      cardEl.className = `card ${isOwned ? 'owned' : ''}`;
-      
-      let stripeHTML = '';
-      if (card.color && card.color.length > 0) {
-        if (card.color.length === 1) {
-          stripeHTML = `<div class="color-stripe" style="background:${COLOR_MAPS[card.color[0]] || '#636878'};"></div>`;
-        } else {
-          const c1 = COLOR_MAPS[card.color[0]] || '#636878';
-          const c2 = COLOR_MAPS[card.color[1]] || '#636878';
-          stripeHTML = `<div class="color-stripe" style="background:linear-gradient(90deg, ${c1} 50%, ${c2} 50%);"></div>`;
-        }
-      }
-
-      cardEl.innerHTML = `
-        <div class="card-img-wrap">
-          <div class="img-ph">
-            <span class="img-ph-id">${card.id}</span>
-            <span style="margin-top:4px;">Image Stream Offline</span>
-          </div>
-          <img src="${card.image}" class="loading" alt="${card.name}" onload="this.className='';" onerror="this.style.display='none';">
-          <div class="owned-check">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          </div>
-        </div>
-        ${stripeHTML}
-        <div class="card-body">
-          <div class="card-meta">
-            <span class="card-id">${card.id}</span>
-            <span class="set-tag">${card.rarity || 'L'}</span>
-          </div>
-          <div class="card-name" title="${card.name}">${card.name}</div>
-          <div class="card-detail">
-            <div class="qty-row">
-              <span class="qty-label">Quantity</span>
-              <div class="qty-ctrl">
-                <button class="qty-btn" onclick="adjustQty('${card.id}', -1, event)">-</button>
-                <span class="qty-val">${isOwned ? entry.qty : 0}</span>
-                <button class="qty-btn" onclick="adjustQty('${card.id}', 1, event)">+</button>
-              </div>
-            </div>
-            <div class="cond-pills">
-              <span class="pill ${isOwned && entry.conds.includes('NM') ? 'on' : ''}" onclick="toggleCondition('${card.id}', 'NM', event)">NM</span>
-              <span class="pill ${isOwned && entry.conds.includes('LP') ? 'on' : ''}" onclick="toggleCondition('${card.id}', 'LP', event)">LP</span>
-              <span class="pill ${isOwned && entry.conds.includes('MP') ? 'on' : ''}" onclick="toggleCondition('${card.id}', 'MP', event)">MP</span>
-            </div>
-            <div class="errata-row">
-              <span class="errata-label">Tags:</span>
-              <span class="pill errata ${isOwned && entry.errata.includes('AA') ? 'on' : ''}" onclick="toggleErrata('${card.id}', 'AA', event)">AA</span>
-              <span class="pill errata ${isOwned && entry.errata.includes('SP') ? 'on' : ''}" onclick="toggleErrata('${card.id}', 'SP', event)">SP</span>
-              <span class="pill errata ${isOwned && entry.errata.includes('Pre') ? 'on' : ''}" onclick="toggleErrata('${card.id}', 'Pre', event)">Pre</span>
-            </div>
-            <button class="remove-btn" onclick="removeCard('${card.id}', event)">PURGE OWNERSHIP</button>
-          </div>
-        </div>
-      `;
-
-      if (!isOwned) {
-        cardEl.addEventListener('click', () => {
-          userCollection[card.id] = { qty: 1, conds: ['NM'], errata: [] };
-          queueCloudSync();
-          buildGapsPanel();
-          renderDOM();
-        });
-      }
-
-      grid.appendChild(cardEl);
+  // Sort booster sets if sortMissing is active
+  let orderedBooster = [...boosterSets];
+  if (sortMissing) {
+    orderedBooster = orderedBooster.slice().sort((a, b) => {
+      const missingA = a.cards.filter(c => !data[c.id]).length;
+      const missingB = b.cards.filter(c => !data[c.id]).length;
+      if (missingA === 0 && missingB === 0) return 0;
+      if (missingA === 0) return 1;  // complete sets sink to bottom
+      if (missingB === 0) return -1;
+      return missingB - missingA; // most missing first
     });
+  }
 
-    section.appendChild(grid);
-    container.appendChild(section);
-  });
+  // Render gaps panel
+  renderGapsPanel(boosterSets, starterSet, promoSet);
+
+  for(const grp of orderedBooster){
+    const cards=filtered(grp.cards);
+    if(!cards.length)continue;
+    any=true;
+    const ownedN=cards.filter(c=>data[c.id]).length;
+    const pct=cards.length?Math.round(ownedN/cards.length*100):0;
+    tAll+=grp.cards.length;tOwned+=grp.cards.filter(c=>data[c.id]).length;
+    const missingCount = grp.cards.filter(c=>!data[c.id]).length;
+    const missingBadge = sortMissing && missingCount === 0
+      ? `<span style="font-size:11px;font-family:'DM Mono',monospace;color:#27e899;margin-left:8px">✓ Complete</span>`
+      : (sortMissing && missingCount > 0 ? `<span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--red);margin-left:8px">${missingCount} missing</span>` : '');
+    html+=`<div class="set-group" id="set-${grp.key}">
+<div class="set-header">
+  <div><div class="set-title">${grp.title}${missingBadge}</div><div class="set-sub">${grp.sub} · Non-Foil Leaders</div></div>
+  <div class="set-progress"><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div><div class="progress-pct">${ownedN}/${cards.length}</div></div>
+</div>
+<div class="card-grid">${cards.map(cardHTML).join('')}</div>
+</div>`;
+  }
+
+  if(starterSet){
+    const stCards=filtered(starterSet.cards);
+    if(!stExcluded){
+      tAll+=starterSet.cards.length;
+      tOwned+=starterSet.cards.filter(c=>data[c.id]).length;
+    }
+    const showSt=curTab!=='owned'||(stCards.filter(c=>data[c.id]).length>0);
+    if(showSt||(curSearch&&stCards.length>0)){
+      any=true;
+      const stOwned=stCards.filter(c=>data[c.id]).length;
+      const stPct=stCards.length?Math.round(stOwned/stCards.length*100):0;
+      const toggleLabel=stExcluded?'Include':'Exclude';
+      const toggleClass=stExcluded?'st-toggle excluded':'st-toggle included';
+      html+=`<div class="set-group${stExcluded?' excluded':''}" id="set-STARTERS">
+<div class="set-header">
+  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0">
+    <div><div class="set-title">${starterSet.title}</div><div class="set-sub">ST-01 through ST-29 · Leaders</div></div>
+    <button class="${toggleClass}" onclick="toggleStarters()">${toggleLabel}</button>
+  </div>
+  <div class="set-progress"><div class="progress-track"><div class="progress-fill" style="width:${stPct}%"></div></div><div class="progress-pct">${stOwned}/${stCards.length}</div></div>
+</div>
+<div class="card-grid">${stCards.map(cardHTML).join('')}</div>
+</div>`;
+    }
+  }
+
+  if(promoSet){
+    const prCards=filtered(promoSet.cards);
+    const showPr=curTab!=='owned'||(prCards.filter(c=>data[c.id]).length>0);
+    if(showPr||(curSearch&&prCards.length>0)){
+      any=true;
+      tAll+=promoSet.cards.length;tOwned+=promoSet.cards.filter(c=>data[c.id]).length;
+      const prOwned=prCards.filter(c=>data[c.id]).length;
+      const prPct=prCards.length?Math.round(prOwned/prCards.length*100):0;
+      html+=`<div class="set-group promo" id="set-PROMO">
+<div class="set-header">
+  <div><div class="set-title">${promoSet.title}</div><div class="set-sub">${promoSet.sub}</div></div>
+  <div class="set-progress"><div class="progress-track"><div class="progress-fill" style="width:${prPct}%"></div></div><div class="progress-pct">${prOwned}/${prCards.length}</div></div>
+</div>
+<div class="card-grid">${prCards.map(cardHTML).join('')}</div>
+</div>`;
+    }
+  }
+
+  if(!any)html='<div class="empty">No leaders match.</div>';
+  main.innerHTML=html;
+  const overallPct=tAll?Math.round(tOwned/tAll*100):0;
+  document.getElementById('stat').innerHTML=`<strong>${tOwned}</strong> / ${tAll} owned · ${overallPct}%`;
 }
 
-function adjustQty(id, delta, ev) {
-  ev.stopPropagation();
-  if (!userCollection[id]) return;
-  userCollection[id].qty = Math.max(1, userCollection[id].qty + delta);
-  queueCloudSync();
-  renderDOM();
+function toggleStarters(){
+  stExcluded=!stExcluded;
+  localStorage.setItem('slk-st-excluded',String(stExcluded));
+  render();
 }
 
-function toggleCondition(id, cond, ev) {
-  ev.stopPropagation();
-  if (!userCollection[id]) return;
-  let arr = userCollection[id].conds;
-  if (arr.includes(cond)) {
-    if (arr.length > 1) arr = arr.filter(c => c !== cond);
+document.getElementById('sortBtn').addEventListener('click',()=>{
+  sortMissing=!sortMissing;
+  const btn=document.getElementById('sortBtn');
+  if(sortMissing){
+    btn.textContent='Sort: Default';
+    btn.classList.add('sort-active');
   } else {
-    arr.push(cond);
+    btn.textContent='Sort: Missing';
+    btn.classList.remove('sort-active');
   }
-  userCollection[id].conds = arr;
-  queueCloudSync();
-  renderDOM();
-}
-
-function toggleErrata(id, tag, ev) {
-  ev.stopPropagation();
-  if (!userCollection[id]) return;
-  let arr = userCollection[id].errata;
-  if (arr.includes(tag)) {
-    arr = arr.filter(t => t !== tag);
-  } else {
-    arr.push(tag);
-  }
-  userCollection[id].errata = arr;
-  queueCloudSync();
-  renderDOM();
-}
-
-function removeCard(id, ev) {
-  ev.stopPropagation();
-  if (!userCollection[id]) return;
-  if (confirm(`Remove asset ${id} metrics from local data arrays?`)) {
-    delete userCollection[id];
-    queueCloudSync();
-    buildGapsPanel();
-    renderDOM();
-  }
-}
-
-function toggleSetExclusion(sKey) {
-  let list = JSON.parse(localStorage.getItem('op_tracker_excluded_sets') || '[]');
-  if (list.includes(sKey)) {
-    list = list.filter(k => k !== sKey);
-  } else {
-    list.push(sKey);
-  }
-  localStorage.setItem('op_tracker_excluded_sets', JSON.stringify(list));
-  renderDOM();
-}
-
-function toggleSortOrder() {
-  const btn = document.getElementById('sortBtn');
-  if (currentSortOrder === 'id') {
-    currentSortOrder = 'missing';
-    btn.innerText = 'SORT: MISSING';
-  } else {
-    currentSortOrder = 'id';
-    btn.innerText = 'SORT: SET ID';
-  }
-  renderDOM();
-}
-
-function filterType(type, btn) {
-  currentTypeFilter = type;
-  document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderDOM();
-}
-
-function resetFilters(e) {
-  e.preventDefault();
-  currentTypeFilter = 'all';
-  currentSearchQuery = '';
-  document.getElementById('searchInput').value = '';
-  document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tabs .tab')[0].classList.add('active');
-  renderDOM();
-}
-
-document.getElementById('searchInput').addEventListener('input', (e) => {
-  currentSearchQuery = e.target.value;
-  renderDOM();
+  render();
 });
 
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.innerText = msg;
-  el.className = 'toast show';
-  setTimeout(() => el.className = 'toast', 3000);
-}
+document.getElementById('search').addEventListener('input',e=>{curSearch=e.target.value.toLowerCase().trim();render();});
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  curTab=t.dataset.tab;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');render();
+}));
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const rows=['Card ID	Name	Color	Set	Qty	Conditions'];
+  const allExportSets=[...SETS.filter(g=>g.key!=='STARTERS'&&g.key!=='PROMO'),SETS.find(g=>g.key==='STARTERS'),SETS.find(g=>g.key==='PROMO')].filter(Boolean);
+  for(const grp of allExportSets)for(const c of grp.cards){
+    const d=data[c.id];
+    const col=Array.isArray(c.c)?c.c.join('/'):(c.c||'');
+    if(d)rows.push([c.id,c.nm,col,c.set||grp.key,d.qty,(d.conds||[]).join(',')].join('\t'));
+  }
+  const blob=new Blob([rows.join('\n')],{type:'text/tab-separated-values'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='op-leader-tracker.tsv';a.click();
+  showToast('Exported ✓');
+});
 
-// --- DATA PORTABILITY SUB-SYSTEMS ---
-function exportToTSV() {
-  let content = "Card ID\tQty\tConditions\tErrata\n";
-  Object.keys(userCollection).forEach(id => {
-    const entry = userCollection[id];
-    content += `${id}\t${entry.qty}\t${entry.conds.join(',')}\t${entry.errata.join(',')}\n`;
-  });
-  const blob = new Blob([content], { type: 'text/tab-separated-values;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `op_leader_collection_${new Date().toISOString().slice(0,10)}.tsv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
-function triggerImport() {
-  document.getElementById('tsvImportInput').click();
-}
-
-function handleImportFile(ev) {
-  const file = ev.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    try {
-      const lines = ev.target.result.trim().split('\n');
-      const headers = lines[0].split('\t').map(h => h.trim());
-      const idIdx = headers.indexOf('Card ID');
-      const qtyIdx = headers.indexOf('Qty');
-      const condIdx = headers.indexOf('Conditions');
-      const errataIdx = headers.indexOf('Errata');
-      if (idIdx === -1) { showToast('Invalid TSV — no Card ID column'); return; }
-      
-      let count = 0;
-      const imported = {};
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split('\t');
-        const id = cols[idIdx] && cols[idIdx].trim();
-        if (!id) continue;
-        const qty = qtyIdx >= 0 && cols[qtyIdx] ? parseInt(cols[qtyIdx]) || 1 : 1;
-        const condsRaw = condIdx >= 0 && cols[condIdx] ? cols[condIdx].trim() : 'NM';
-        const conds = condsRaw.split(',').map(c => c.trim()).filter(Boolean);
-        const errataRaw = errataIdx >= 0 && cols[errataIdx] ? cols[errataIdx].trim() : '';
-        const errata = errataRaw ? errataRaw.split(',').map(v => v.trim()).filter(Boolean) : [];
-        imported[id] = { qty, conds: conds.length ? conds : ['NM'], errata };
+// Import TSV
+document.getElementById('importFile').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const lines=ev.target.result.trim().split('\n');
+      const headers=lines[0].split('\t').map(h=>h.trim());
+      const idIdx=headers.indexOf('Card ID');
+      const qtyIdx=headers.indexOf('Qty');
+      const condIdx=headers.indexOf('Conditions');
+      if(idIdx===-1){showToast('Invalid TSV — no Card ID column');return;}
+      let count=0;
+      const imported={};
+      for(let i=1;i<lines.length;i++){
+        const cols=lines[i].split('\t');
+        const id=cols[idIdx]&&cols[idIdx].trim();
+        if(!id)continue;
+        const qty=qtyIdx>=0&&cols[qtyIdx]?parseInt(cols[qtyIdx])||1:1;
+        const condsRaw=condIdx>=0&&cols[condIdx]?cols[condIdx].trim():'NM';
+        const conds=condsRaw.split(',').map(c=>c.trim()).filter(Boolean);
+        imported[id]={qty,conds:conds.length?conds:['NM']};
         count++;
       }
-      if (confirm(`Import ${count} cards from TSV? This will REPLACE your current layout state.`)) {
-        userCollection = imported;
-        executeCloudSync();
-        buildGapsPanel();
-        renderDOM();
-        showToast(`Successfully processed structural records.`);
-      }
-    } catch (err) {
-      showToast('Parsing failure occurred on matching targets.');
+      if(!confirm(`Import ${count} cards from TSV? This will REPLACE your current collection.`))return;
+      data=imported;
+      scheduleSave();
+      render();
+      showToast(`Imported ${count} cards ✓`);
+    }catch(err){
+      showToast('Import failed: '+err.message);
     }
+    // Reset input so same file can be re-imported
+    e.target.value='';
   };
   reader.readAsText(file);
-  ev.target.value = '';
-}
+});
 </script>
-<script async defer src="https://apis.google.com/js/api.js" onload="initGapi()"></script>
-<script async defer src="https://accounts.google.com/gsi/client" onload="initGis()"></script>
 </body>
 </html>
