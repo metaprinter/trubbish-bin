@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flip Analyzer — Trubbish Bin</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #c9a84c;
+  --gold-dim: #8a6e2f;
+  --gold-faint: rgba(201,168,76,0.08);
+  --gold-border: rgba(201,168,76,0.22);
+  --bg: #0e0e0e;
+  --bg2: #161616;
+  --bg3: #1e1e1e;
+  --bg4: #262626;
+  --text: #e8e2d4;
+  --text2: #9a9284;
+  --text3: #5a5448;
+  --green: #4caf7a;
+  --green-bg: rgba(76,175,122,0.1);
+  --amber: #e6a817;
+  --amber-bg: rgba(230,168,23,0.1);
+  --red: #e05c5c;
+  --red-bg: rgba(224,92,92,0.1);
+  --blue: #5b9bd5;
+  --blue-bg: rgba(91,155,213,0.1);
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.site-header {
+  border-bottom: 1px solid var(--gold-border);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  height: 56px;
+  background: var(--bg);
+}
+.site-header .logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-header nav {
+  display: flex;
+  gap: 1.5rem;
+  margin-left: auto;
+}
+.site-header nav a {
+  font-size: 11px;
+  color: var(--text2);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  transition: color 0.15s;
+}
+.site-header nav a:hover { color: var(--gold); }
+
+/* PAGE LAYOUT */
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 4rem;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  border-left: 3px solid var(--gold);
+  padding-left: 1rem;
+}
+.page-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: var(--gold);
+  margin-bottom: 0.4rem;
+}
+.page-subtitle {
+  color: var(--text2);
+  font-size: 13px;
+}
+
+/* DRIVE STATUS */
+.drive-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.drive-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text3);
+  flex-shrink: 0;
+}
+.drive-dot.connected { background: var(--green); }
+.drive-dot.error { background: var(--red); }
+.drive-label { color: var(--text2); }
+.drive-action {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.drive-action:hover { background: var(--gold-faint); }
+
+/* INPUT PANEL */
+.input-panel {
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.panel-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  margin-bottom: 1.25rem;
+}
+
+/* TIMELINE TABS */
+.timeline-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.tl-tab {
+  flex: 1;
+  padding: 0.6rem;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  color: var(--text2);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.tl-tab:hover { border-color: var(--gold-border); color: var(--text); }
+.tl-tab.active {
+  background: var(--gold-faint);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.tl-tab .tl-label { display: block; font-weight: 500; margin-bottom: 2px; }
+.tl-tab .tl-range { font-size: 10px; color: var(--text3); }
+.tl-tab.active .tl-range { color: var(--gold-dim); }
+
+/* COST FIELDS */
+.cost-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.field-group label {
+  display: block;
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 0.35rem;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.04em;
+}
+.field-group input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 0.15s;
+  outline: none;
+}
+.field-group input:focus { border-color: var(--gold); }
+.field-group input::placeholder { color: var(--text3); }
+
+/* TSV TEXTAREA */
+.tsv-label {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 0.35rem;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.04em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tsv-hint {
+  font-size: 10px;
+  color: var(--text3);
+}
+textarea#tsv-input {
+  width: 100%;
+  height: 130px;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 0.75rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+textarea#tsv-input:focus { border-color: var(--gold); }
+textarea#tsv-input::placeholder { color: var(--text3); }
+
+/* ANALYZE BUTTON */
+.analyze-btn {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--gold);
+  border: none;
+  border-radius: var(--radius);
+  color: #0e0e0e;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: opacity 0.15s;
+}
+.analyze-btn:hover { opacity: 0.88; }
+.analyze-btn:active { opacity: 0.75; }
+
+/* ERROR BOX */
+.error-box {
+  display: none;
+  background: var(--red-bg);
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
+  color: var(--red);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+
+/* RESULTS */
+#results-content { display: none; margin-top: 1.5rem; }
+
+/* VERDICT CARD */
+.verdict-card {
+  background: var(--bg2);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--gold-border);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.verdict-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+.verdict-BUY { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+.verdict-WATCH { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber); }
+.verdict-GRADE { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+.verdict-PASS { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+
+.verdict-meta { flex: 1; min-width: 0; }
+.verdict-score-line {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 0.35rem;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.verdict-score-line strong { color: var(--text); }
+.verdict-summary { font-size: 13px; color: var(--text); }
+
+/* STATS GRID */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+.stat-label {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+}
+.stat-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px;
+  color: var(--text);
+  font-weight: 500;
+}
+.stat-sub {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+  margin-top: 2px;
+}
+
+/* SCORE BARS */
+.scores-panel {
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.scores-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  margin-bottom: 1.1rem;
+  text-transform: uppercase;
+}
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+.score-dim {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text2);
+  width: 120px;
+  flex-shrink: 0;
+}
+.score-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.score-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--gold);
+  transition: width 0.4s ease;
+}
+.score-fill.low { background: var(--red); }
+.score-fill.mid { background: var(--amber); }
+.score-fill.high { background: var(--green); }
+.score-num {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text2);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* WARNINGS */
+.warning-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 12px;
+  color: var(--amber);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.warning-icon { flex-shrink: 0; font-size: 14px; }
+
+/* COMPS TABLE */
+.comps-panel {
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.comps-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+.comps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.comps-table th {
+  text-align: left;
+  color: var(--text3);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 0 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--bg4);
+}
+.comps-table td {
+  padding: 0.4rem 0.5rem;
+  color: var(--text2);
+  border-bottom: 1px solid var(--bg3);
+}
+.comps-table td:first-child { color: var(--text); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comps-table td.price { color: var(--gold); font-weight: 500; }
+.comps-table tr:last-child td { border-bottom: none; }
+
+/* SAVE ROW */
+.save-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.save-btn {
+  flex: 1;
+  padding: 0.6rem;
+  background: none;
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.save-btn:hover { background: var(--gold-faint); }
+.save-btn.saved { border-color: var(--green); color: var(--green); }
+
+/* HISTORY */
+.history-panel {
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-top: 1.5rem;
+}
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.history-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.history-empty {
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  text-align: center;
+  padding: 1.5rem 0;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--bg3);
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.history-item:last-child { border-bottom: none; }
+.history-verdict {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.history-info { flex: 1; min-width: 0; }
+.history-date { font-size: 10px; color: var(--text3); }
+.history-stats { color: var(--text2); font-size: 11px; }
+.history-price { color: var(--gold); font-weight: 500; }
+
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .cost-row { grid-template-columns: 1fr; }
+  .timeline-tabs { flex-direction: column; }
+  .verdict-card { flex-direction: column; gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="logo">TRUBBISH BIN</a>
+  <nav>
+    <a href="op-leader-tracker.html">OP LEADERS</a>
+    <a href="op-carddass-tracker.html">OP CARDDASS</a>
+    <a href="op-carddass.html">RESEARCH</a>
+    <a href="flip-analyzer.html" style="color:var(--gold)">FLIP ANALYZER</a>
+  </nav>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div class="page-title">FLIP ANALYZER</div>
+    <div class="page-subtitle">Paste your bookmarklet TSV — get a scored verdict with seller concentration analysis</div>
+  </div>
+
+  <div class="drive-bar">
+    <div class="drive-dot" id="drive-dot"></div>
+    <span class="drive-label" id="drive-label">Connecting to Drive...</span>
+    <button class="drive-action" id="drive-action-btn" onclick="signIn()" style="display:none">Sign In</button>
+  </div>
+
+  <div class="input-panel">
+    <div class="panel-title">ANALYSIS SETTINGS</div>
+
+    <div class="timeline-tabs">
+      <div class="tl-tab active" data-tl="3mo" onclick="setTimeline('3mo', this)">
+        <span class="tl-label">3-MONTH FLIP</span>
+        <span class="tl-range">Quick turn · high velocity req.</span>
+      </div>
+      <div class="tl-tab" data-tl="mid" onclick="setTimeline('mid', this)">
+        <span class="tl-label">MID HOLD</span>
+        <span class="tl-range">3–6 months · balanced</span>
+      </div>
+      <div class="tl-tab" data-tl="long" onclick="setTimeline('long', this)">
+        <span class="tl-label">LONG GAME</span>
+        <span class="tl-range">6–12+ months · trend-driven</span>
+      </div>
+    </div>
+
+    <div class="cost-row">
+      <div class="field-group">
+        <label>BUY PRICE ($)</label>
+        <input type="number" id="buy-price" placeholder="e.g. 12.00" min="0" step="0.01">
+      </div>
+      <div class="field-group">
+        <label>GRADE COST ($)</label>
+        <input type="number" id="grade-cost" placeholder="e.g. 20.00" min="0" step="0.01">
+      </div>
+      <div class="field-group">
+        <label>SHIP COST ($)</label>
+        <input type="number" id="ship-cost" placeholder="e.g. 4.50" min="0" step="0.01">
+      </div>
+    </div>
+
+    <div class="tsv-label">
+      <span>SOLD COMPS TSV</span>
+      <span class="tsv-hint">Header row required · tab-separated</span>
+    </div>
+    <textarea id="tsv-input" placeholder="Paste bookmarklet TSV output here...&#10;&#10;Date	Title	Price	Seller	..."></textarea>
+
+    <div class="error-box" id="error-box"></div>
+
+    <button class="analyze-btn" onclick="runAnalysis()">▶ ANALYZE</button>
+  </div>
+
+  <div id="results-content">
+    <div class="verdict-card" id="verdict-card">
+      <div class="verdict-badge" id="verdict-badge">—</div>
+      <div class="verdict-meta">
+        <div class="verdict-score-line">Score: <strong id="verdict-score">—</strong> / 100 &nbsp;·&nbsp; Timeline: <strong id="verdict-timeline">—</strong></div>
+        <div class="verdict-summary" id="verdict-summary">—</div>
+      </div>
+    </div>
+
+    <div id="seller-warning" style="display:none" class="warning-box">
+      <span class="warning-icon">⚠</span>
+      <span id="seller-warning-text"></span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">SALES / 30D</div>
+        <div class="stat-value" id="stat-velocity">—</div>
+        <div class="stat-sub" id="stat-velocity-sub">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">MEDIAN PRICE</div>
+        <div class="stat-value" id="stat-median">—</div>
+        <div class="stat-sub" id="stat-median-sub">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">PRICE RANGE</div>
+        <div class="stat-value" id="stat-range">—</div>
+        <div class="stat-sub" id="stat-range-sub">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TREND</div>
+        <div class="stat-value" id="stat-trend">—</div>
+        <div class="stat-sub" id="stat-trend-sub">—</div>
+      </div>
+    </div>
+
+    <div class="scores-panel">
+      <div class="scores-title">DIMENSION SCORES</div>
+      <div id="score-bars"></div>
+    </div>
+
+    <div class="comps-panel">
+      <div class="comps-title">RECENT COMPS (TOP 5)</div>
+      <table class="comps-table">
+        <thead>
+          <tr>
+            <th>TITLE</th>
+            <th>DATE</th>
+            <th>PRICE</th>
+            <th>SELLER</th>
+          </tr>
+        </thead>
+        <tbody id="comps-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="save-row">
+      <button class="save-btn" id="save-btn" onclick="saveAnalysis()">💾 SAVE TO DRIVE</button>
+    </div>
+  </div>
+
+  <div class="history-panel" id="history-panel">
+    <div class="history-header">
+      <div class="history-title">ANALYSIS HISTORY</div>
+    </div>
+    <div id="history-list"><div class="history-empty">No saved analyses yet.</div></div>
+  </div>
+</main>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────
+const CLIENT_ID = '406228714733-s5jaq0bp4nl7uujdc35j51l8nj0cgagt.apps.googleusercontent.com';
+const FOLDER_ID = '1Mf5sWIjDszg5UMgikmExaVWeeufCFVWB';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const HISTORY_FILENAME = 'flip-analyzer-history.json';
+
+let tokenClient = null;
+let accessToken = null;
+let historyFileId = null;
+let historyData = [];
+let currentTimeline = '3mo';
+let lastAnalysis = null;
+
+// ── GOOGLE DRIVE ─────────────────────────────────────────────────────
+function initGsi() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    prompt: '',
+    callback: async (resp) => {
+      if (resp.error) { setDriveStatus('error', 'Drive auth failed'); return; }
+      accessToken = resp.access_token;
+      setDriveStatus('connected', 'Drive connected');
+      await loadHistory();
+    }
+  });
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function signIn() {
+  if (!tokenClient) return;
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+  document.getElementById('drive-action-btn').style.display = 'none';
+}
+
+function setDriveStatus(state, msg) {
+  const dot = document.getElementById('drive-dot');
+  const label = document.getElementById('drive-label');
+  dot.className = 'drive-dot' + (state === 'connected' ? ' connected' : state === 'error' ? ' error' : '');
+  label.textContent = msg;
+  if (state === 'error') document.getElementById('drive-action-btn').style.display = '';
+}
+
+async function driveRequest(url, options = {}) {
+  const headers = { Authorization: 'Bearer ' + accessToken, ...(options.headers || {}) };
+  const res = await fetch(url, { ...options, headers });
+  if (!res.ok) throw new Error('Drive error ' + res.status);
+  return res;
+}
+
+async function loadHistory() {
+  try {
+    const res = await driveRequest(
+      `https://www.googleapis.com/drive/v3/files?q=name='${HISTORY_FILENAME}' and '${FOLDER_ID}' in parents and trashed=false&fields=files(id,name)`
+    );
+    const data = await res.json();
+    if (data.files && data.files.length > 0) {
+      historyFileId = data.files[0].id;
+      const dl = await driveRequest(`https://www.googleapis.com/drive/v3/files/${historyFileId}?alt=media`);
+      historyData = await dl.json();
+      renderHistory();
+    }
+  } catch(e) {
+    console.warn('History load failed:', e);
+  }
+}
+
+async function saveAnalysis() {
+  if (!lastAnalysis) return;
+  const btn = document.getElementById('save-btn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  try {
+    historyData.unshift({ ...lastAnalysis, saved: new Date().toISOString() });
+    if (historyData.length > 100) historyData = historyData.slice(0, 100);
+    const body = JSON.stringify(historyData);
+    if (historyFileId) {
+      await driveRequest(
+        `https://www.googleapis.com/upload/drive/v3/files/${historyFileId}?uploadType=media`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body }
+      );
+    } else {
+      const meta = { name: HISTORY_FILENAME, parents: [FOLDER_ID] };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+      form.append('file', new Blob([body], { type: 'application/json' }));
+      const res = await driveRequest('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', body: form });
+      const created = await res.json();
+      historyFileId = created.id;
+    }
+    btn.textContent = '✓ SAVED';
+    btn.classList.add('saved');
+    renderHistory();
+  } catch(e) {
+    btn.textContent = '✗ SAVE FAILED';
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = '💾 SAVE TO DRIVE'; btn.classList.remove('saved'); }, 2500);
+  }
+}
+
+// ── TIMELINE ─────────────────────────────────────────────────────────
+function setTimeline(tl, el) {
+  currentTimeline = tl;
+  document.querySelectorAll('.tl-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── TSV PARSING ───────────────────────────────────────────────────────
+function parseTSV(raw) {
+  const lines = raw.trim().split('\n');
+  if (lines.length < 2) throw new Error('Need at least a header row and one data row.');
+  const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = lines[i].split('\t');
+    const row = {};
+    headers.forEach((h, idx) => row[h] = (cells[idx] || '').trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+function findCol(row, ...candidates) {
+  for (const c of candidates) {
+    for (const key of Object.keys(row)) {
+      if (key.includes(c)) return row[key];
+    }
+  }
+  return '';
+}
+
+function parsePrice(val) {
+  const n = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function parseDate(val) {
+  if (!val) return null;
+  const d = new Date(val);
+  return isNaN(d) ? null : d;
+}
+
+// ── ANALYSIS ─────────────────────────────────────────────────────────
+function analyzeRows(rows, timeline, buyPrice, gradeCost, shipCost) {
+  const prices = [], dates = [], sellers = [];
+
+  for (const r of rows) {
+    const price = parsePrice(findCol(r, 'price', 'sold', 'amount'));
+    const date = parseDate(findCol(r, 'date', 'sold date', 'solddate'));
+    const seller = (findCol(r, 'seller', 'store') || '').toLowerCase();
+    if (price) prices.push(price);
+    if (date) dates.push(date);
+    if (seller) sellers.push(seller);
+  }
+
+  if (!prices.length) throw new Error('No price data found. Check TSV column names include "price" or "sold".');
+
+  prices.sort((a, b) => a - b);
+  const median = prices[Math.floor(prices.length / 2)];
+  const min = prices[0];
+  const max = prices[prices.length - 1];
+  const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+
+  // Velocity: sales per 30 days
+  let velocity = 0;
+  if (dates.length >= 2) {
+    dates.sort((a, b) => a - b);
+    const spanDays = (dates[dates.length - 1] - dates[0]) / 86400000;
+    velocity = spanDays > 0 ? (dates.length / spanDays) * 30 : dates.length;
+  } else {
+    velocity = rows.length; // fallback
+  }
+
+  // Trend: compare first half avg vs second half avg
+  let trend = 0, trendLabel = 'FLAT';
+  if (prices.length >= 4) {
+    const mid = Math.floor(prices.length / 2);
+    // Use date-ordered prices if possible
+    let orderedPrices = prices;
+    if (dates.length === prices.length) {
+      const paired = rows.map(r => ({
+        price: parsePrice(findCol(r, 'price', 'sold', 'amount')),
+        date: parseDate(findCol(r, 'date', 'sold date', 'solddate'))
+      })).filter(x => x.price && x.date).sort((a, b) => a.date - b.date);
+      if (paired.length >= 4) orderedPrices = paired.map(x => x.price);
+    }
+    const firstHalf = orderedPrices.slice(0, Math.floor(orderedPrices.length / 2));
+    const secondHalf = orderedPrices.slice(Math.floor(orderedPrices.length / 2));
+    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+    trend = firstAvg > 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
+    if (trend > 10) trendLabel = '↑ RISING';
+    else if (trend > 3) trendLabel = '↗ STABLE+';
+    else if (trend < -10) trendLabel = '↓ FALLING';
+    else if (trend < -3) trendLabel = '↘ STABLE-';
+    else trendLabel = '→ FLAT';
+  }
+
+  // Seller concentration
+  const sellerCounts = {};
+  sellers.forEach(s => sellerCounts[s] = (sellerCounts[s] || 0) + 1);
+  let topSeller = '', topSellerPct = 0;
+  for (const [s, cnt] of Object.entries(sellerCounts)) {
+    const pct = cnt / sellers.length;
+    if (pct > topSellerPct) { topSellerPct = pct; topSeller = s; }
+  }
+
+  // Margin calc
+  let marginScore = 50;
+  if (buyPrice) {
+    const allIn = buyPrice + (gradeCost || 0) + (shipCost || 0);
+    const expectedNet = median * 0.87; // after ~13% eBay fees
+    const multiple = allIn > 0 ? expectedNet / allIn : 0;
+    if (multiple >= 2.5) marginScore = 90;
+    else if (multiple >= 2.0) marginScore = 70;
+    else if (multiple >= 1.5) marginScore = 50;
+    else if (multiple >= 1.0) marginScore = 25;
+    else marginScore = 5;
+  }
+
+  // Dimension scores calibrated per timeline
+  const dims = scoreDimensions(timeline, { velocity, trend, prices, median, topSellerPct, marginScore });
+
+  // Total score
+  const totalScore = Math.round(Object.values(dims).reduce((a, b) => a + b.score * b.weight, 0) / Object.values(dims).reduce((a, b) => a + b.weight, 0));
+
+  let verdict, summary;
+  if (totalScore >= 75) { verdict = 'BUY'; summary = 'Strong signal across velocity, margin, and trend. Pull the trigger.'; }
+  else if (totalScore >= 55) { verdict = 'WATCH'; summary = 'Solid but not exceptional. Monitor for better entry or improving trend.'; }
+  else if (totalScore >= 40 && gradeCost) { verdict = 'GRADE'; summary = 'Raw margins thin but grading could unlock significant upside.'; }
+  else { verdict = 'PASS'; summary = 'Insufficient velocity, margin, or trend to justify the hold risk.'; }
+
+  // Top 5 recent comps
+  const topComps = rows
+    .map(r => ({
+      title: findCol(r, 'title', 'name', 'item'),
+      date: findCol(r, 'date', 'sold date', 'solddate'),
+      price: parsePrice(findCol(r, 'price', 'sold', 'amount')),
+      seller: findCol(r, 'seller', 'store')
+    }))
+    .filter(c => c.price)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5);
+
+  return { verdict, totalScore, summary, median, min, max, avg, velocity, trend, trendLabel, topSellerPct, topSeller, dims, topComps, count: rows.length };
+}
+
+function scoreDimensions(timeline, { velocity, trend, prices, median, topSellerPct, marginScore }) {
+  // Velocity thresholds vary by timeline
+  const velThresh = timeline === '3mo' ? [8, 4, 2] : timeline === 'mid' ? [4, 2, 1] : [2, 1, 0.5];
+  const velScore = velocity >= velThresh[0] ? 90 : velocity >= velThresh[1] ? 70 : velocity >= velThresh[2] ? 45 : 20;
+
+  // Trend weight varies
+  const trendWeight = timeline === 'long' ? 30 : timeline === 'mid' ? 20 : 10;
+  const trendScore = trend > 15 ? 90 : trend > 5 ? 70 : trend > 0 ? 55 : trend > -5 ? 40 : 15;
+
+  // Price spread (lower = more consistent market)
+  const spread = prices.length > 1 ? (prices[prices.length - 1] - prices[0]) / (median || 1) : 0;
+  const consistencyScore = spread < 0.3 ? 90 : spread < 0.6 ? 70 : spread < 1.0 ? 50 : 30;
+
+  // Seller concentration penalty
+  const concentrationScore = topSellerPct > 0.5 ? 20 : topSellerPct > 0.35 ? 50 : topSellerPct > 0.2 ? 70 : 90;
+
+  // Sample size
+  const sampleScore = prices.length >= 10 ? 90 : prices.length >= 6 ? 70 : prices.length >= 3 ? 50 : 25;
+
+  return {
+    Velocity:      { score: velScore,          weight: timeline === '3mo' ? 35 : timeline === 'mid' ? 25 : 15 },
+    Margin:        { score: marginScore,        weight: 25 },
+    Trend:         { score: trendScore,         weight: trendWeight },
+    Consistency:   { score: consistencyScore,   weight: 15 },
+    Concentration: { score: concentrationScore, weight: 10 },
+    'Sample Size': { score: sampleScore,        weight: 10 },
+  };
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────
+function runAnalysis() {
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('results-content').style.display = 'none';
+
+  const raw = document.getElementById('tsv-input').value.trim();
+  if (!raw) {
+    showError('Paste your TSV data first.');
+    return;
+  }
+
+  const buyPrice = parseFloat(document.getElementById('buy-price').value) || 0;
+  const gradeCost = parseFloat(document.getElementById('grade-cost').value) || 0;
+  const shipCost = parseFloat(document.getElementById('ship-cost').value) || 0;
+
+  try {
+    const rows = parseTSV(raw);
+    const analysis = analyzeRows(rows, currentTimeline, buyPrice, gradeCost, shipCost);
+    lastAnalysis = { ...analysis, timeline: currentTimeline, buyPrice, gradeCost, shipCost, timestamp: new Date().toISOString() };
+    renderResults(analysis, currentTimeline, buyPrice, gradeCost, shipCost);
+  } catch(e) {
+    showError('Parse error: ' + e.message);
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function fmt(n, decimals = 2) { return n != null ? '$' + n.toFixed(decimals) : '—'; }
+
+function renderResults(a, timeline, buyPrice, gradeCost, shipCost) {
+  // Verdict
+  const badge = document.getElementById('verdict-badge');
+  badge.textContent = a.verdict;
+  badge.className = 'verdict-badge verdict-' + a.verdict;
+  document.getElementById('verdict-score').textContent = a.totalScore;
+  document.getElementById('verdict-timeline').textContent = timeline === '3mo' ? '3-Month' : timeline === 'mid' ? 'Mid Hold' : 'Long Game';
+  document.getElementById('verdict-summary').textContent = a.summary;
+
+  // Seller warning
+  const warnEl = document.getElementById('seller-warning');
+  if (a.topSellerPct >= 0.35 && a.topSeller) {
+    document.getElementById('seller-warning-text').textContent =
+      `Seller concentration warning: "${a.topSeller}" accounts for ${Math.round(a.topSellerPct * 100)}% of all comps. Market depth may be artificial.`;
+    warnEl.style.display = 'flex';
+  } else {
+    warnEl.style.display = 'none';
+  }
+
+  // Stats
+  document.getElementById('stat-velocity').textContent = a.velocity.toFixed(1);
+  document.getElementById('stat-velocity-sub').textContent = a.count + ' sales analyzed';
+  document.getElementById('stat-median').textContent = fmt(a.median);
+  document.getElementById('stat-median-sub').textContent = 'avg ' + fmt(a.avg);
+  document.getElementById('stat-range').textContent = fmt(a.min, 0) + '–' + fmt(a.max, 0);
+  document.getElementById('stat-range-sub').textContent = 'spread ' + ((a.max - a.min) / (a.median || 1) * 100).toFixed(0) + '%';
+  document.getElementById('stat-trend').textContent = a.trendLabel.split(' ')[0];
+  document.getElementById('stat-trend-sub').textContent = (a.trend > 0 ? '+' : '') + a.trend.toFixed(1) + '% ' + a.trendLabel.split(' ').slice(1).join(' ');
+
+  // Score bars
+  const barsEl = document.getElementById('score-bars');
+  barsEl.innerHTML = '';
+  for (const [dim, { score, weight }] of Object.entries(a.dims)) {
+    const cls = score >= 70 ? 'high' : score >= 45 ? 'mid' : 'low';
+    barsEl.innerHTML += `
+      <div class="score-row">
+        <div class="score-dim">${dim}</div>
+        <div class="score-track"><div class="score-fill ${cls}" style="width:${score}%"></div></div>
+        <div class="score-num">${score}</div>
+      </div>`;
+  }
+
+  // Comps table
+  const tbody = document.getElementById('comps-tbody');
+  tbody.innerHTML = '';
+  for (const c of a.topComps) {
+    tbody.innerHTML += `
+      <tr>
+        <td>${c.title || '—'}</td>
+        <td>${c.date || '—'}</td>
+        <td class="price">${c.price ? fmt(c.price) : '—'}</td>
+        <td>${c.seller || '—'}</td>
+      </tr>`;
+  }
+
+  document.getElementById('results-content').style.display = 'block';
+  document.getElementById('results-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!historyData.length) {
+    el.innerHTML = '<div class="history-empty">No saved analyses yet.</div>';
+    return;
+  }
+  el.innerHTML = historyData.slice(0, 20).map(h => {
+    const verdictClass = `verdict-${h.verdict}`;
+    const date = h.saved ? new Date(h.saved).toLocaleDateString() : '—';
+    return `
+      <div class="history-item">
+        <div class="history-verdict verdict-badge ${verdictClass}" style="font-size:9px;padding:2px 6px">${h.verdict}</div>
+        <div class="history-info">
+          <div class="history-stats">Score ${h.totalScore} · Median ${fmt(h.median)} · ${h.count} comps · ${h.timeline}</div>
+          <div class="history-date">${date}</div>
+        </div>
+        <div class="history-price">${h.buyPrice ? 'Buy: ' + fmt(h.buyPrice) : ''}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = initGsi;
+    script.onerror = () => setDriveStatus('error', 'Drive unavailable');
+    document.head.appendChild(script);
+  }, 800);
+  setTimeout(() => {
+    const label = document.getElementById('drive-label');
+    if (label.textContent === 'Connecting to Drive...') {
+      setDriveStatus('error', 'Drive sign-in required');
+    }
+  }, 6000);
+});
+</script>
+</body>
+</html>
