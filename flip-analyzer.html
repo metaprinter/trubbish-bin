@@ -369,6 +369,9 @@ textarea#tsv-input::placeholder { color: var(--text3); }
   color: var(--text2);
   width: 120px;
   flex-shrink: 0;
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted var(--text3);
 }
 .score-track {
   flex: 1;
@@ -393,6 +396,39 @@ textarea#tsv-input::placeholder { color: var(--text3); }
   width: 28px;
   text-align: right;
   flex-shrink: 0;
+}
+
+/* TOOLTIPS */
+.score-dim {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted var(--text3);
+}
+.score-dim:hover .tooltip {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.tooltip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  background: var(--bg4);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  font-size: 11px;
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  white-space: normal;
+  width: 240px;
+  line-height: 1.5;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s;
+  cursor: default;
 }
 
 /* WARNINGS */
@@ -639,7 +675,7 @@ textarea#tsv-input::placeholder { color: var(--text3); }
     </div>
 
     <div class="comps-panel">
-      <div class="comps-title">RECENT COMPS (TOP 5)</div>
+      <div class="comps-title">ALL COMPS (<span id="comps-count">0</span>)</div>
       <table class="comps-table">
         <thead>
           <tr>
@@ -774,6 +810,9 @@ function setTimeline(tl, el) {
   currentTimeline = tl;
   document.querySelectorAll('.tl-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+  // Re-run if data already pasted
+  const raw = document.getElementById('tsv-input').value.trim();
+  if (raw) runAnalysis();
 }
 
 // ── TSV PARSING ───────────────────────────────────────────────────────
@@ -901,17 +940,17 @@ function analyzeRows(rows, timeline, buyPrice, gradeCost, shipCost) {
   else if (totalScore >= 40 && gradeCost) { verdict = 'GRADE'; summary = 'Raw margins thin but grading could unlock significant upside.'; }
   else { verdict = 'PASS'; summary = 'Insufficient velocity, margin, or trend to justify the hold risk.'; }
 
-  // Top 5 recent comps
+  // All comps sorted by date descending
   const topComps = rows
     .map(r => ({
       title: findCol(r, 'title', 'name', 'item'),
       date: findCol(r, 'date', 'sold date', 'solddate'),
       price: parsePrice(findCol(r, 'price', 'sold', 'amount')),
-      seller: findCol(r, 'seller', 'store')
+      seller: findCol(r, 'seller', 'store'),
+      url: findCol(r, 'url', 'link', 'listing url')
     }))
     .filter(c => c.price)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return { verdict, totalScore, summary, median, min, max, avg, velocity, trend, trendLabel, topSellerPct, topSeller, dims, topComps, count: rows.length };
 }
@@ -1007,26 +1046,42 @@ function renderResults(a, timeline, buyPrice, gradeCost, shipCost) {
   document.getElementById('stat-trend').textContent = a.trendLabel.split(' ')[0];
   document.getElementById('stat-trend-sub').textContent = (a.trend > 0 ? '+' : '') + a.trend.toFixed(1) + '% ' + a.trendLabel.split(' ').slice(1).join(' ');
 
-  // Score bars
+  // Score bars with tooltips
+  const dimTooltips = {
+    'Velocity':      'How many sales per 30 days. Higher = more liquid market. Threshold shifts by timeline — a 3-month flip needs faster turns than a long hold.',
+    'Margin':        'Expected net after eBay fees vs. your all-in cost. Needs 2.5x to score well. Only calculated if you filled in Buy Price.',
+    'Trend':         'Compares average price in the first half of your comp window vs. the second half. Rising trend = market heating up. Weighted more heavily on Long Game.',
+    'Consistency':   'How tight the price spread is. A wide range (cheap raw next to expensive graded) means the market is noisy and harder to predict.',
+    'Concentration': 'What percentage of comps come from a single seller. High concentration can mean artificial supply — one person dumping inventory skews the data.',
+    'Sample Size':   'How many sold comps you have. Fewer than 3 is unreliable. 10+ gives a solid picture.',
+  };
   const barsEl = document.getElementById('score-bars');
   barsEl.innerHTML = '';
   for (const [dim, { score, weight }] of Object.entries(a.dims)) {
     const cls = score >= 70 ? 'high' : score >= 45 ? 'mid' : 'low';
+    const tip = dimTooltips[dim] || '';
     barsEl.innerHTML += `
       <div class="score-row">
-        <div class="score-dim">${dim}</div>
+        <div class="score-dim" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text2);width:120px;flex-shrink:0;position:relative;cursor:help;border-bottom:1px dotted var(--text3)">
+          ${dim}
+          <div class="tooltip">${tip}</div>
+        </div>
         <div class="score-track"><div class="score-fill ${cls}" style="width:${score}%"></div></div>
         <div class="score-num">${score}</div>
       </div>`;
   }
 
-  // Comps table
+  // All comps with links
   const tbody = document.getElementById('comps-tbody');
+  document.getElementById('comps-count').textContent = a.topComps.length;
   tbody.innerHTML = '';
   for (const c of a.topComps) {
+    const titleCell = c.url
+      ? `<a href="${c.url}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;border-bottom:1px solid var(--text3)" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text)'">${c.title || '—'}</a>`
+      : (c.title || '—');
     tbody.innerHTML += `
       <tr>
-        <td>${c.title || '—'}</td>
+        <td>${titleCell}</td>
         <td>${c.date || '—'}</td>
         <td class="price">${c.price ? fmt(c.price) : '—'}</td>
         <td>${c.seller || '—'}</td>
