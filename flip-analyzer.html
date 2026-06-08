@@ -185,7 +185,7 @@ textarea#tsv-input {
 /* DASHBOARD GRID SYSTEM */
 .dashboard-layout {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 420px 1fr;
   gap: 1.5rem;
   margin-top: 1.5rem;
   display: none;
@@ -237,10 +237,11 @@ textarea#tsv-input {
   gap: 0.5rem;
 }
 .lead-name {
+  font-family: 'IBM Plex Mono', monospace;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text);
-  line-height: 1.3;
+  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -446,7 +447,7 @@ textarea#tsv-input {
 <main class="page">
   <div class="page-header">
     <div class="page-title">MACRO FLIP ANALYZER</div>
-    <div class="page-subtitle">Smart Token Aggregator — Parses composite TSV files into early spike leaders</div>
+    <div class="page-subtitle">Strict Alphanumeric Token Aggregator — Splits out variants by card numbers, rarities, and parallel treatments</div>
   </div>
 
   <div class="input-panel">
@@ -558,47 +559,72 @@ function parseTSV(raw) {
   });
 }
 
-// ── SMART TOKEN MATCHING ALGORITHM ──────────────────────────────────
+// ── STRICT PRODUCTION CLASSIFICATION ENGINE ─────────────────────────
 function generateSmartTokenKey(title) {
-  let t = title.toLowerCase();
+  let t = title.toUpperCase();
 
-  // 1. Target exact vintage Carddass ID formats: S22, C122, S-JF01.3, PA-W25, OP04-011, etc.
-  const cardIdMatch = t.match(/\b([a-z]{1,4}[-_\/]?[a-z0-9]{1,4}(?:\.\d)?)\b/g);
-  
-  // 2. Extract standard standalone numbers as a backup option (#25, No.25)
-  const genericNumbers = t.match(/(?:#|no\.?)\s*(\d{1,4})/g) || [];
+  // 1. EXTRACT CORE CHARACTER (Normalize structural variants)
+  let character = "OTHER";
+  const characterMap = {
+    'LUFFY': ['MONKEY.D.LUFFY', 'MONKEY D LUFFY', 'MONKEY D. LUFFY', 'LUFFY'],
+    'SHANKS': ['SHANKS'],
+    'ZORO': ['RORONOA ZORO', 'ZORO'],
+    'NAMI': ['NAMI'],
+    'SANJI': ['SANJI'],
+    'ENEL': ['ENEL'],
+    'BUGGY': ['BUGGY'],
+    'DOFLAMINGO': ['DONQUIXOTE DOFLAMINGO', 'DOFLAMINGO'],
+    'YAMATO': ['YAMATO'],
+    'TEACH': ['MARSHALL.D.TEACH', 'MARSHALL D TEACH', 'BLACKBEARD', 'TEACH', 'TEECH'],
+    'LAW': ['TRAFALGAR LAW', 'LAW'],
+    'CHOPPER': ['CHOPPER'],
+    'ACE': ['ACE']
+  };
 
-  // 3. Keep core character name anchors
-  const characterNames = [];
-  const knownCharacters = ['luffy', 'shanks', 'zoro', 'nami', 'sanji', 'chopper', 'usopp', 'robin', 'franky', 'brook', 'ace', 'sabo', 'law', 'hancock'];
-  
-  knownCharacters.forEach(char => {
-    if (t.includes(char)) characterNames.push(char);
-  });
-
-  // 4. Strip low-value fluff words entirely
-  t = t.replace(/(mint|near mint|nm|lp|excellent|ex|vg|played|good|rare|super rare|sr|sec|secret|parallel|carddass|hyper battle|bandai|vintage|old|original|promo|pack|booster|lot|set|singles|cgc|bgs|psa \d+|grade|graded|slab|auth|authentic|shipping|fast|tcg|english|japanese|jp)/gi, ' ');
-  t = t.replace(/[^a-z0-9 ]/g, ' ');
-  const standardWords = t.split(/\s+/).filter(w => w.length > 2);
-
-  // 5. Construct the Anchor Rule
-  let finalIdAnchor = '';
-  if (cardIdMatch && cardIdMatch.length > 0) {
-    const validIds = cardIdMatch.filter(id => !['tcg', '2000', '1999', '2001', 'ebay', 'itm'].includes(id));
-    if (validIds.length > 0) finalIdAnchor = validIds[0]; 
-  }
-  
-  if (!finalIdAnchor && genericNumbers.length > 0) {
-    finalIdAnchor = genericNumbers[0].replace(/[^0-9]/g, '');
+  for (const [shortName, aliases] of Object.entries(characterMap)) {
+    if (aliases.some(alias => t.includes(alias))) {
+      character = shortName;
+      break;
+    }
   }
 
-  if (finalIdAnchor && characterNames.length > 0) {
-    return `${characterNames[0]} ${finalIdAnchor}`.toUpperCase();
-  } else if (finalIdAnchor) {
-    return `CARD ID ${finalIdAnchor}`.toUpperCase();
+  // 2. EXTRACT EXACT CARD NUMBER (Trap modern prefixes & vintage formats)
+  let cardId = "UNKNOWN-ID";
+  const cardIdMatches = t.match(/\b([A-Z]{1,4}[-_\/]?[A-Z0-9]{1,4}(?:\.\d)?)\b/g);
+  if (cardIdMatches) {
+    const validIds = cardIdMatches.filter(id => !['TCG', '2000', '1999', '2001', '2024', '2025', '2026', 'EBAY', 'ITM', 'ANIME', 'VINTAGE', 'JAPAN', 'JAPANESE', 'ENGLISH', 'SEC', 'RARE', 'L'].includes(id));
+    if (validIds.length > 0) {
+      cardId = validIds[0];
+    }
   }
 
-  return (standardWords.slice(0, 2).join(' ') || "unclassified entries").toUpperCase();
+  // 3. EXTRACT EXTRACTION RARITY 
+  let rarity = "REG";
+  if (/\b(SEC|SECRET)\b/.test(t)) rarity = "SEC";
+  else if (/\b(SP SR|SP-SR)\b/.test(t)) rarity = "SP SR";
+  else if (/\b(SR|SUPER RARE)\b/.test(t)) rarity = "SR";
+  else if (/\b(AA|ALT ART|ALTERNATIVE ART)\b/.test(t)) rarity = "AA";
+  else if (/\b(R|RARE)\b/.test(t)) rarity = "R";
+  else if (/\b(UC|UNCOMMON)\b/.test(t)) rarity = "UC";
+  else if (/\b(C|COMMON)\b/.test(t)) rarity = "C";
+  else if (/\b(L|LEADER)\b/.test(t)) rarity = "L";
+
+  // 4. EXTRACT PARALLEL COATINGS AND FINISHES
+  let feature = "REGULAR";
+  if (/\b(ALT ART|ALTERNATIVE ART|PARALLEL|MANGART|SPECIAL ART|MANGA|CHASE|SPECIAL PRINT)\b/.test(t)) {
+    feature = "ALT ART";
+  } else if (/\b(GOLD FOIL|FOIL|HOLO|HOLOLO|REFRACTOR)\b/.test(t)) {
+    feature = "FOIL";
+  }
+
+  // 5. COMPOSE MANDATORY STRUCTURAL KEY
+  if (cardId !== "UNKNOWN-ID") {
+    return `${character} [${cardId}] ${rarity} (${feature})`;
+  }
+
+  const cleanTitle = t.replace(/[^A-Z0-9 ]/g, ' ');
+  const words = cleanTitle.split(/\s+/).filter(w => w.length > 2 && !['MINT', 'NEAR', 'VINTAGE', 'CARDDASS'].includes(w));
+  return `${character} ${words.slice(0, 2).join(' ')} ${rarity} (${feature})`;
 }
 
 function processAndGroupTSV(rows) {
@@ -610,7 +636,6 @@ function processAndGroupTSV(rows) {
     const tokenKey = generateSmartTokenKey(title);
     const rawPrice = parseFloat((r['price'] || r['amount'] || '').replace(/[^0-9.]/g, ''));
     
-    // Support multiple incoming date header variations from the bookmarklet
     const dateRaw = r['sold date'] || r['date'] || r['solddate'] || '';
     const rawDate = dateRaw ? new Date(dateRaw) : null;
     
@@ -618,7 +643,7 @@ function processAndGroupTSV(rows) {
 
     if (!map[tokenKey]) {
       map[tokenKey] = {
-        displayName: title.toUpperCase(),
+        displayName: tokenKey, // Use clean structural code output directly on the list UI
         comps: []
       };
     }
@@ -638,11 +663,10 @@ function processAndGroupTSV(rows) {
 function runTimeBoxAnalysis(comps, buy, grade, ship) {
   comps.sort((a, b) => b.date - a.date);
   
-  // Set accurate timeboxing baseline anchor window
+  // Set explicit date anchor to align 2026 data arrays correctly
   const refDate = new Date("2026-06-08T18:00:00"); 
   const msInDay = 86400000;
 
-  // Split buckets: Last 3 Days spike vs Prior 18 Days daily baseline stability envelope
   const vol3dComps = comps.filter(c => (refDate - c.date) <= (3 * msInDay));
   const baseComps = comps.filter(c => {
     const delta = refDate - c.date;
@@ -655,7 +679,7 @@ function runTimeBoxAnalysis(comps, buy, grade, ship) {
   
   let velocityMultiplier = baselineVelocity > 0 ? (recentVelocity / baselineVelocity) : (count3d > 0 ? count3d : 0);
 
-  // Floor Price Shift Calculation (Tracks modifications inside Lowest 20% value percentile)
+  // Floor Price Shift Calculation (Tracks modifications inside Lowest 20% percentile)
   const getFloorTier = (targetComps) => {
     if (!targetComps.length) return 0;
     const sortedPrices = targetComps.map(c => c.price).sort((a,b)=>a-b);
@@ -686,15 +710,15 @@ function runTimeBoxAnalysis(comps, buy, grade, ship) {
     if (pct > topSellerPct) { topSellerPct = pct; topSeller = s; }
   }
 
-  // Margin Assessment Matrix calculations
+  // Margin Multipliers
   let marginMultiplier = 0;
   if (buy > 0) {
     const totalCost = buy + grade + ship;
-    const expectedNet = median * 0.87; // Accounts for standard ~13% market cut
+    const expectedNet = median * 0.87; 
     marginMultiplier = totalCost > 0 ? expectedNet / totalCost : 0;
   }
 
-  // Calculate Weighted Indices for Dimensions Score Blocks
+  // Weighted Index Calibrations
   const velocityScore = Math.min(100, Math.max(0, (velocityMultiplier * 25))); 
   const floorScore = Math.min(100, Math.max(0, floorShiftPct > 0 ? 50 + (floorShiftPct * 1.5) : 50 + (floorShiftPct * 2)));
   const concentrationScore = topSellerPct > 0.35 ? Math.max(10, 100 - (topSellerPct * 150)) : 100;
@@ -744,7 +768,7 @@ function executeMacroAnalysis() {
     
     parsedGroupMap = {};
     for (const [key, payload] of Object.entries(groups)) {
-      if (payload.comps.length < 3) continue; // Noise filter for low density samples
+      if (payload.comps.length < 2) continue; // Show items with 2 or more historical hits
       
       const analysis = runTimeBoxAnalysis(payload.comps, buy, grade, ship);
       parsedGroupMap[key] = {
@@ -758,7 +782,7 @@ function executeMacroAnalysis() {
     });
 
     if (orderedGroupKeys.length === 0) {
-      throw new Error("No clean card configurations resolved. Verify listing ID columns exist.");
+      throw new Error("No card configurations resolved. Verify listing ID or Title data formatting.");
     }
 
     renderDashboardSkeleton();
@@ -783,7 +807,7 @@ function renderDashboardSkeleton() {
     else if (score >= 45) heatClass = 'heat-mid';
 
     const itemHtml = `
-      <div class="lead-item ${index === 0 ? 'active' : ''}" id="lbl-${key}" onclick="selectLeaderboardItem('${key}')">
+      <div class="lead-item ${index === 0 ? 'active' : ''}" id="lbl-${key.replace(/[^A-Z0-9]/g, '_')}" onclick="selectLeaderboardItem('${key}')">
         <div class="lead-title-row">
           <div class="lead-name">${entry.displayName}</div>
           <div class="lead-heat ${heatClass}">H:${score}</div>
@@ -803,7 +827,7 @@ function renderDashboardSkeleton() {
 
 function selectLeaderboardItem(key) {
   document.querySelectorAll('.lead-item').forEach(el => el.classList.remove('active'));
-  const activeLabel = document.getElementById(`lbl-${key}`);
+  const activeLabel = document.getElementById(`lbl-${key.replace(/[^A-Z0-9]/g, '_')}`);
   if (activeLabel) activeLabel.classList.add('active');
 
   const data = parsedGroupMap[key];
@@ -815,14 +839,14 @@ function selectLeaderboardItem(key) {
   
   document.getElementById('v-momentum').textContent = a.heatScore;
   
-  let summaryStr = `Token parameters tracking securely within normal standard volatility boundaries.`;
-  if (a.heatScore >= 70) summaryStr = `ALERT: Strong breakout surge. Recent volume clustering paired with upward floor baseline shifts identified.`;
-  else if (a.heatScore < 45) summaryStr = `Market trajectory displaying decay or complete momentum breakdown. Risk premium unadvised.`;
+  let summaryStr = `Token parameters tracking securely within baseline market variance.`;
+  if (a.heatScore >= 70) summaryStr = `ALERT: Confirmed breakout velocity. Micro-volume clustering matched with compressed baseline floor expansion.`;
+  else if (a.heatScore < 45) summaryStr = `Asset metrics tracking lower or stale. Moving capital into position unadvised.`;
   document.getElementById('v-summary').textContent = summaryStr;
 
   const warnEl = document.getElementById('v-warning');
   if (a.topSellerPct >= 0.35) {
-    document.getElementById('v-warning-text').textContent = `WARNING: Single seller "${a.topSeller}" controls ${Math.round(a.topSellerPct * 100)}% of tracked volume. Risk of artificial floor padding.`;
+    document.getElementById('v-warning-text').textContent = `WARNING: Merchant "${a.topSeller}" accounts for ${Math.round(a.topSellerPct * 100)}% of sales. Liquidity depths may be artificial.`;
     warnEl.style.cssText = "display: flex;";
   } else {
     warnEl.style.cssText = "display: none;";
