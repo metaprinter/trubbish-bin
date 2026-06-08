@@ -562,57 +562,47 @@ function parseTSV(raw) {
 function generateSmartTokenKey(title) {
   let t = title.toLowerCase();
 
-  // 1. Extract potential identifier digits / numbers (e.g., "#25", "no-12", "op01-025")
-  const numberMatches = t.match(/(?:#|no\.?|op\d{2}-)?\b\d{2,4}\b/g) || [];
+  // 1. Target exact vintage Carddass ID formats: S22, C122, S-JF01.3, PA-W25, SW-M2, etc.
+  // This matches letters, optional hyphens/slashes, followed by numbers and decimals
+  const cardIdMatch = t.match(/\b([a-z]{1,4}[-_\/]?[a-z0-9]{1,4}(?:\.\d)?)\b/g);
   
-  // 2. Eliminate low-value metadata terminology that skews groups
-  t = t.replace(/(mint|near mint|nm|lp|excellent|ex|vg|played|good|rare|super rare|sr|sec|secret|parallel|carddass|hyper battle|bandai|vintage|old|original|promo|pack|booster|lot|set|singles|cgc|bgs|psa \d+|grade|graded|slab|auth|authentic|shipping|fast|tcg|english|japanese|jp)/gi, ' ');
-  
-  // Clean alphanumeric characters only
-  t = t.replace(/[^a-z0-9 ]/g, ' ');
-  const words = t.split(/\s+/).filter(w => w.length > 2);
+  // 2. Extract standard standalone numbers as a backup option (#25, No.25)
+  const genericNumbers = t.match(/(?:#|no\.?)\s*(\d{1,4})/g) || [];
 
-  // Take top 3 core defining text tokens
-  const coreWords = words.slice(0, 3);
+  // 3. Keep core character name anchors (Luffy, Shanks, Zoro, Nami, Sanji)
+  const characterNames = [];
+  const knownCharacters = ['luffy', 'shanks', 'zoro', 'nami', 'sanji', 'chopper', 'usopp', 'robin', 'franky', 'brook', 'ace', 'sabo', 'law', 'hancock'];
   
-  if (coreWords.length === 0 && numberMatches.length === 0) return "Miscellaneous / Non-Classified";
-  
-  // Return unique anchor stamp: words + trailing identifier indices
-  return [...coreWords, ...numberMatches.slice(0, 2)].join(' ');
-}
-
-function processAndGroupTSV(rows) {
-  const map = {};
-  
-  rows.forEach(r => {
-    const title = r['title'] || '';
-    if (!title) return;
-    
-    const tokenKey = generateSmartTokenKey(title);
-    
-    // Safely structure normalized models
-    const rawPrice = parseFloat((r['price'] || '').replace(/[^0-9.]/g, ''));
-    const rawDate = r['sold date'] ? new Date(r['sold date']) : null;
-    
-    if (isNaN(rawPrice) || !rawDate || isNaN(rawDate.getTime())) return;
-
-    if (!map[tokenKey]) {
-      map[tokenKey] = {
-        displayName: title.toUpperCase(), // Anchor with first instance for visual neatness
-        comps: []
-      };
-    }
-    
-    map[tokenKey].comps.push({
-      title: title,
-      date: rawDate,
-      price: rawPrice,
-      seller: r['seller'] || 'Unknown',
-      url: r['url'] || ''
-    });
+  knownCharacters.forEach(char => {
+    if (t.includes(char)) characterNames.push(char);
   });
 
-  return map;
+  // 4. Strip low-value fluff words entirely
+  t = t.replace(/(mint|near mint|nm|lp|excellent|ex|vg|played|good|rare|super rare|sr|sec|secret|parallel|carddass|hyper battle|bandai|vintage|old|original|promo|pack|booster|lot|set|singles|cgc|bgs|psa \d+|grade|graded|slab|auth|authentic|shipping|fast|tcg|english|japanese|jp)/gi, ' ');
+  t = t.replace(/[^a-z0-9 ]/g, ' ');
+  const standardWords = t.split(/\s+/).filter(w => w.length > 2);
+
+  // 5. Construct the Anchor Rule
+  let finalIdAnchor = '';
+  if (cardIdMatch && cardIdMatch.length > 0) {
+    // Filter out false positives from card ID matching (like 'tcg' or '2000')
+    const validIds = cardIdMatch.filter(id => !['tcg', '2000', '1999', '2001', 'ebay', 'itm'].includes(id));
+    if (validIds.length > 0) finalIdAnchor = validIds[0]; 
+  }
+  
+  if (!finalIdAnchor && genericNumbers.length > 0) {
+    finalIdAnchor = genericNumbers[0].replace(/[^0-9]/g, '');
+  }
+
+  // If we found a unique card ID and a character name, lock them together tightly
+  if (finalIdAnchor && characterNames.length > 0) {
+    return `${characterNames[0]} ${finalIdAnchor}`;
+  } else if (finalIdAnchor) {
+    return `card id ${finalIdAnchor}`;
+  }
+
+  // Fallback to top text terms if no alphanumeric card IDs are present
+  return standardWords.slice(0, 2).join(' ') || "unclassified entries";
 }
 
 // ── TIMEBOX MATHEMATICS ENGINE ──────────────────────────────────────
