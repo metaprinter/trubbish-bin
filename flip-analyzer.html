@@ -562,14 +562,13 @@ function parseTSV(raw) {
 function generateSmartTokenKey(title) {
   let t = title.toLowerCase();
 
-  // 1. Target exact vintage Carddass ID formats: S22, C122, S-JF01.3, PA-W25, SW-M2, etc.
-  // This matches letters, optional hyphens/slashes, followed by numbers and decimals
+  // 1. Target exact vintage Carddass ID formats: S22, C122, S-JF01.3, PA-W25, OP04-011, etc.
   const cardIdMatch = t.match(/\b([a-z]{1,4}[-_\/]?[a-z0-9]{1,4}(?:\.\d)?)\b/g);
   
   // 2. Extract standard standalone numbers as a backup option (#25, No.25)
   const genericNumbers = t.match(/(?:#|no\.?)\s*(\d{1,4})/g) || [];
 
-  // 3. Keep core character name anchors (Luffy, Shanks, Zoro, Nami, Sanji)
+  // 3. Keep core character name anchors
   const characterNames = [];
   const knownCharacters = ['luffy', 'shanks', 'zoro', 'nami', 'sanji', 'chopper', 'usopp', 'robin', 'franky', 'brook', 'ace', 'sabo', 'law', 'hancock'];
   
@@ -585,7 +584,6 @@ function generateSmartTokenKey(title) {
   // 5. Construct the Anchor Rule
   let finalIdAnchor = '';
   if (cardIdMatch && cardIdMatch.length > 0) {
-    // Filter out false positives from card ID matching (like 'tcg' or '2000')
     const validIds = cardIdMatch.filter(id => !['tcg', '2000', '1999', '2001', 'ebay', 'itm'].includes(id));
     if (validIds.length > 0) finalIdAnchor = validIds[0]; 
   }
@@ -594,27 +592,57 @@ function generateSmartTokenKey(title) {
     finalIdAnchor = genericNumbers[0].replace(/[^0-9]/g, '');
   }
 
-  // If we found a unique card ID and a character name, lock them together tightly
   if (finalIdAnchor && characterNames.length > 0) {
-    return `${characterNames[0]} ${finalIdAnchor}`;
+    return `${characterNames[0]} ${finalIdAnchor}`.toUpperCase();
   } else if (finalIdAnchor) {
-    return `card id ${finalIdAnchor}`;
+    return `CARD ID ${finalIdAnchor}`.toUpperCase();
   }
 
-  // Fallback to top text terms if no alphanumeric card IDs are present
-  return standardWords.slice(0, 2).join(' ') || "unclassified entries";
+  return (standardWords.slice(0, 2).join(' ') || "unclassified entries").toUpperCase();
+}
+
+function processAndGroupTSV(rows) {
+  const map = {};
+  rows.forEach(r => {
+    const title = r['title'] || r['item'] || '';
+    if (!title) return;
+    
+    const tokenKey = generateSmartTokenKey(title);
+    const rawPrice = parseFloat((r['price'] || r['amount'] || '').replace(/[^0-9.]/g, ''));
+    
+    // Support multiple incoming date header variations from the bookmarklet
+    const dateRaw = r['sold date'] || r['date'] || r['solddate'] || '';
+    const rawDate = dateRaw ? new Date(dateRaw) : null;
+    
+    if (isNaN(rawPrice) || !rawDate || isNaN(rawDate.getTime())) return;
+
+    if (!map[tokenKey]) {
+      map[tokenKey] = {
+        displayName: title.toUpperCase(),
+        comps: []
+      };
+    }
+    
+    map[tokenKey].comps.push({
+      title: title,
+      date: rawDate,
+      price: rawPrice,
+      seller: r['seller'] || r['store'] || 'Unknown',
+      url: r['url'] || r['link'] || ''
+    });
+  });
+  return map;
 }
 
 // ── TIMEBOX MATHEMATICS ENGINE ──────────────────────────────────────
 function runTimeBoxAnalysis(comps, buy, grade, ship) {
-  // Sort descending by timeline chronological order
   comps.sort((a, b) => b.date - a.date);
   
-  // Hard reference anchoring current target framework to 2026 data arrays
-  const refDate = new Date("2026-06-07T18:00:00"); 
+  // Set accurate timeboxing baseline anchor window
+  const refDate = new Date("2026-06-08T18:00:00"); 
   const msInDay = 86400000;
 
-  // Segment buckets: 3 days vs preceding 18 days (21-day envelope total)
+  // Split buckets: Last 3 Days spike vs Prior 18 Days daily baseline stability envelope
   const vol3dComps = comps.filter(c => (refDate - c.date) <= (3 * msInDay));
   const baseComps = comps.filter(c => {
     const delta = refDate - c.date;
@@ -625,10 +653,9 @@ function runTimeBoxAnalysis(comps, buy, grade, ship) {
   const recentVelocity = count3d / 3;
   const baselineVelocity = baseComps.length / 18;
   
-  // Calculate speed multiplier coefficient
   let velocityMultiplier = baselineVelocity > 0 ? (recentVelocity / baselineVelocity) : (count3d > 0 ? count3d : 0);
 
-  // Floor Price Shift Calculation (Lowest 20% tier tracking)
+  // Floor Price Shift Calculation (Tracks modifications inside Lowest 20% value percentile)
   const getFloorTier = (targetComps) => {
     if (!targetComps.length) return 0;
     const sortedPrices = targetComps.map(c => c.price).sort((a,b)=>a-b);
@@ -645,7 +672,6 @@ function runTimeBoxAnalysis(comps, buy, grade, ship) {
     floorShiftPct = ((floor3d - floorBase) / floorBase) * 100;
   }
 
-  // Baseline stats arrays
   const allPrices = comps.map(c => c.price).sort((a,b)=>a-b);
   const median = allPrices[Math.floor(allPrices.length / 2)] || 0;
   const average = allPrices.reduce((a,b)=>a+b,0) / allPrices.length || 0;
@@ -660,22 +686,20 @@ function runTimeBoxAnalysis(comps, buy, grade, ship) {
     if (pct > topSellerPct) { topSellerPct = pct; topSeller = s; }
   }
 
-  // Margin Assessment
+  // Margin Assessment Matrix calculations
   let marginMultiplier = 0;
   if (buy > 0) {
     const totalCost = buy + grade + ship;
-    const expectedNet = median * 0.87; // Estimate 13% standard market drag fee
+    const expectedNet = median * 0.87; // Accounts for standard ~13% market cut
     marginMultiplier = totalCost > 0 ? expectedNet / totalCost : 0;
   }
 
-  // ── CORE ALGORITHMIC SCORING FORMULA ──────────────────────────────
-  // Cap velocity index weights logically to balance surges gracefully
+  // Calculate Weighted Indices for Dimensions Score Blocks
   const velocityScore = Math.min(100, Math.max(0, (velocityMultiplier * 25))); 
   const floorScore = Math.min(100, Math.max(0, floorShiftPct > 0 ? 50 + (floorShiftPct * 1.5) : 50 + (floorShiftPct * 2)));
   const concentrationScore = topSellerPct > 0.35 ? Math.max(10, 100 - (topSellerPct * 150)) : 100;
   const marginScore = marginMultiplier >= 2.0 ? 95 : marginMultiplier >= 1.5 ? 75 : marginMultiplier >= 1.0 ? 50 : 20;
 
-  // Sum combined metrics variables into Heat Score
   const rawHeat = (velocityScore * 0.5) + (floorScore * 0.3) + (marginScore * 0.2);
   const finalHeatScore = Math.round(Math.min(100, Math.max(0, rawHeat)));
 
@@ -691,7 +715,7 @@ function runTimeBoxAnalysis(comps, buy, grade, ship) {
     topSellerPct,
     marginMultiplier,
     dimensions: {
-      'Velocity Velocity': Math.round(velocityScore),
+      'Velocity Frequency': Math.round(velocityScore),
       'Floor Price Shift': Math.round(floorScore),
       'Seller Isolation': Math.round(concentrationScore),
       'Margin Efficiency': Math.round(marginScore)
@@ -699,7 +723,6 @@ function runTimeBoxAnalysis(comps, buy, grade, ship) {
   };
 }
 
-// ── EXECUTIVE HANDLERS ──────────────────────────────────────────────
 function executeMacroAnalysis() {
   document.getElementById('error-box').style.display = 'none';
   const rawTSV = document.getElementById('tsv-input').value.trim();
@@ -719,10 +742,9 @@ function executeMacroAnalysis() {
     const rows = parseTSV(rawTSV);
     const groups = processAndGroupTSV(rows);
     
-    // Evaluate individual scores per aggregated key token
     parsedGroupMap = {};
     for (const [key, payload] of Object.entries(groups)) {
-      if (payload.comps.length < 3) continue; // Purge noise artifacts with less than 3 sales records
+      if (payload.comps.length < 3) continue; // Noise filter for low density samples
       
       const analysis = runTimeBoxAnalysis(payload.comps, buy, grade, ship);
       parsedGroupMap[key] = {
@@ -731,13 +753,12 @@ function executeMacroAnalysis() {
       };
     }
 
-    // Sort key metrics descending by final Heat Score indices
     orderedGroupKeys = Object.keys(parsedGroupMap).sort((a, b) => {
       return parsedGroupMap[b].analysis.heatScore - parsedGroupMap[a].analysis.heatScore;
     });
 
     if (orderedGroupKeys.length === 0) {
-      throw new Error("No robust groups could be structured. Verify data sample size density contains matching targets.");
+      throw new Error("No clean card configurations resolved. Verify listing ID columns exist.");
     }
 
     renderDashboardSkeleton();
@@ -768,7 +789,7 @@ function renderDashboardSkeleton() {
           <div class="lead-heat ${heatClass}">H:${score}</div>
         </div>
         <div class="lead-meta-row">
-          <span>Sales: <strong>${entry.comps.length}</strong></span>
+          <span>Total Sales: <strong>${entry.comps.length}</strong></span>
           <span>Recent 3D: <strong>${entry.analysis.count3d}</strong></span>
         </div>
       </div>
@@ -777,7 +798,6 @@ function renderDashboardSkeleton() {
   });
 
   document.getElementById('dashboard-layout').style.display = 'grid';
-  // Default paint to highest dynamic leader index
   selectLeaderboardItem(orderedGroupKeys[0]);
 }
 
@@ -789,28 +809,25 @@ function selectLeaderboardItem(key) {
   const data = parsedGroupMap[key];
   const a = data.analysis;
 
-  // Render Core Banner Text Verdict Profiles
   const badge = document.getElementById('v-badge');
   badge.textContent = a.heatScore >= 70 ? 'BUY' : a.heatScore >= 45 ? 'WATCH' : 'PASS';
   badge.className = `verdict-badge verdict-${badge.textContent}`;
   
   document.getElementById('v-momentum').textContent = a.heatScore;
   
-  let summaryStr = `Token key [${key}] displays safe execution indicators.`;
-  if (a.heatScore >= 70) summaryStr = `ALERT: Breakout pattern identified. Sudden frequency increase or upward floor movement matches tracking parameters.`;
-  else if (a.heatScore < 45) summaryStr = `Market stagnation or downward asset tracking detected. Fluid inventory actions advised against.`;
+  let summaryStr = `Token parameters tracking securely within normal standard volatility boundaries.`;
+  if (a.heatScore >= 70) summaryStr = `ALERT: Strong breakout surge. Recent volume clustering paired with upward floor baseline shifts identified.`;
+  else if (a.heatScore < 45) summaryStr = `Market trajectory displaying decay or complete momentum breakdown. Risk premium unadvised.`;
   document.getElementById('v-summary').textContent = summaryStr;
 
-  // Render Concentration Alerts
   const warnEl = document.getElementById('v-warning');
   if (a.topSellerPct >= 0.35) {
-    document.getElementById('v-warning-text').textContent = `WARNING: Merchant "${a.topSeller}" holds ${Math.round(a.topSellerPct * 100)}% volume density. Risk of artificial supply dumps.`;
+    document.getElementById('v-warning-text').textContent = `WARNING: Single seller "${a.topSeller}" controls ${Math.round(a.topSellerPct * 100)}% of tracked volume. Risk of artificial floor padding.`;
     warnEl.style.cssText = "display: flex;";
   } else {
     warnEl.style.cssText = "display: none;";
   }
 
-  // Bind Grid stats numbers
   document.getElementById('s-vol-3d').textContent = a.count3d;
   document.getElementById('s-vol-base').textContent = a.baselineDaily.toFixed(2);
   document.getElementById('s-median').textContent = `$${a.median.toFixed(2)}`;
@@ -820,7 +837,6 @@ function selectLeaderboardItem(key) {
   floorEl.textContent = (a.floorShiftPct >= 0 ? '+' : '') + a.floorShiftPct.toFixed(1) + '%';
   floorEl.style.color = a.floorShiftPct > 5 ? 'var(--green)' : a.floorShiftPct < -5 ? 'var(--red)' : 'var(--text)';
 
-  // Build Score bars array loops
   const barsContainer = document.getElementById('v-score-bars');
   barsContainer.innerHTML = '';
   for (const [dimName, subScore] of Object.entries(a.dimensions)) {
@@ -834,7 +850,6 @@ function selectLeaderboardItem(key) {
     `;
   }
 
-  // Output Comps table items
   document.getElementById('s-comp-count').textContent = data.comps.length;
   const tbody = document.getElementById('v-comps-tbody');
   tbody.innerHTML = '';
