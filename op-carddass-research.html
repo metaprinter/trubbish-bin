@@ -450,6 +450,91 @@ function sortBy(col) {
 
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+// ========== GRADED TITLE PARSER ==========
+function parseGradedTitle(title, soldDate) {
+  const rec = { grader: '', grade: '', year: '', character: '', descriptor: '', week: '' };
+  if (!title) return rec;
+  const t = title.trim();
+
+  // Grader + Grade
+  const graderMatch =
+    t.match(/\b(ARS)(\d+(?:\.\d+)?)/i) ||
+    t.match(/\b(PSA|CGC|BGS)\s*(\d+(?:\.\d+)?)/i);
+  if (graderMatch) {
+    rec.grader = graderMatch[1].toUpperCase();
+    rec.grade  = graderMatch[2];
+  }
+
+  // Descriptor
+  const descMatch = t.match(/\b(PRISTINE|GEM\s+MINT)\b/i);
+  if (descMatch) {
+    rec.descriptor = descMatch[1].replace(/\s+/g, ' ').toUpperCase();
+  } else if (/\b(FOIL|HOLO)\b/i.test(t)) {
+    rec.descriptor = t.match(/\b(FOIL|HOLO)\b/i)[1].toUpperCase();
+  }
+
+  // Year (first occurrence = card year)
+  const yearMatches = t.match(/\b(199[0-9]|200[0-9])\b/g);
+  if (yearMatches) rec.year = yearMatches[0];
+
+  // Character — strip from grader token onward, then find last card ID
+  let stripped = t
+    .replace(/\b(?:ARS\d+(?:\.\d+)?|(?:PSA|CGC|BGS)\s*\d+(?:\.\d+)?)\b.*$/i, '')
+    .trim();
+
+  const cardIdRe = /#[A-Z]{0,3}\d+|\b[CS][A-Z]?\d{2,4}\b/gi;
+  const allCardIds = [...stripped.matchAll(cardIdRe)];
+  const lastCardId = allCardIds.length ? allCardIds[allCardIds.length - 1] : null;
+
+  const NOISE_WORDS = new Set([
+    'one','piece','carddass','hyper','battle','stage','grand','box','line',
+    'compilation','japanese','jpn','straw','hat','crew','pirates','bandai',
+    'first','foil','holo','promo','1st','2nd','3rd','4th','5th','6th',
+    '7th','8th','dx','chb','psa','cgc','bgs','ars','sp','pa','vacation',
+  ]);
+  const isNoise = w => {
+    const clean = w.replace(/[^a-z]/gi, '').toLowerCase();
+    return clean.length <= 1 || NOISE_WORDS.has(clean) || /^\d/.test(w);
+  };
+
+  let charRaw = '';
+  if (lastCardId) {
+    let afterId = stripped.slice(lastCardId.index + lastCardId[0].length).trim();
+    afterId = afterId.replace(/^[^a-zA-Z]+/, '').trim();
+    const noiseRe = /^(JAPANESE|JPN|FOIL|HOLO|PROMO|STAGE|BOX|GRAND|LINE|DX|CHB|\d+(?:ST|ND|RD|TH)?)\s+/i;
+    while (noiseRe.test(afterId)) afterId = afterId.replace(noiseRe, '').trim();
+    afterId = afterId.replace(/\s+\d{4}$/, '').trim();
+    if (afterId.length >= 2) {
+      charRaw = afterId;
+    } else {
+      const beforeId = stripped.slice(0, lastCardId.index).trim();
+      const words = beforeId.split(/\s+/).filter(w => !isNoise(w));
+      charRaw = words.slice(-3).join(' ');
+    }
+  } else {
+    const words = stripped.split(/\s+/).filter(w => !isNoise(w));
+    charRaw = words.slice(-3).join(' ');
+  }
+
+  charRaw = charRaw.replace(/^[^a-zA-Z]+/, '').trim();
+  if (charRaw) rec.character = charRaw.charAt(0).toUpperCase() + charRaw.slice(1).toLowerCase();
+
+  // Week (ISO Monday)
+  if (soldDate) {
+    try {
+      const d = new Date(soldDate);
+      if (!isNaN(d)) {
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        const mon = new Date(d.setDate(diff));
+        rec.week = mon.toISOString().slice(0, 10);
+      }
+    } catch (_) {}
+  }
+
+  return rec;
+}
+
 // ========== MODAL CRUD ==========
 function addRow() {
   editIdx = -1;
@@ -564,7 +649,16 @@ function importTSV(e, mode) {
         if (field === 'price') { v = parseFloat(v.replace(/[$,]/g, '')) || 0; }
         rec[field] = v;
       });
-      if (rec.title || rec.price) imported.push(rec);
+      if (rec.title || rec.price) {
+        const parsed = parseGradedTitle(rec.title, rec.soldDate);
+        if (!rec.grader)     rec.grader     = parsed.grader;
+        if (!rec.grade)      rec.grade      = parsed.grade;
+        if (!rec.year)       rec.year       = parsed.year;
+        if (!rec.character)  rec.character  = parsed.character;
+        if (!rec.descriptor) rec.descriptor = parsed.descriptor;
+        if (!rec.week)       rec.week       = parsed.week;
+        imported.push(rec);
+      }
     }
 
     if (imported.length === 0) { toast('No valid rows found'); return; }
@@ -664,7 +758,7 @@ function normalizeGrader(g) {
 
 function renderDashboard() {
   const app = document.getElementById('tab-dashboard');
-  if (DATA.length === 0) { app.innerHTML = '<p style="padding:40px;text-align:center;color:var(--text-dim)">No data loaded. Import a CSV or add records in the DATA tab.</p>'; return; }
+  if (DATA.length === 0) { app.innerHTML = '<p style="padding:40px;text-align:center;color:var(--text-dim)">No data loaded. Import a TSV or add records in the DATA tab.</p>'; return; }
 
   // Prepare normalized data
   const rows = DATA.map(r => ({
