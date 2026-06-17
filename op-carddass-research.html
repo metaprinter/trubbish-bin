@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OP Carddass Market Research — Trubbish Bin</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;600;700&family=Bitter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;600;700&family=Bitter:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #1a1a0e;
@@ -24,19 +26,7 @@
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg); color:var(--text); font-family:'Bitter',Georgia,serif; min-height:100vh; }
-.header { background:var(--surface); border-bottom:2px solid var(--gold-dim); padding:16px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.header h1 { font-family:'Press Start 2P',monospace; font-size:13px; color:var(--gold); letter-spacing:1px; }
-.header .subtitle { font-size:12px; color:var(--text-dim); margin-left:auto; }
-.nav-back { font-family:'Press Start 2P',monospace; font-size:10px; color:var(--gold-dim); text-decoration:none; }
-.nav-back:hover { color:var(--gold); }
 .dashboard { max-width:1200px; margin:0 auto; padding:20px; }
-
-/* Auth */
-.auth-bar { background:var(--surface2); border-bottom:1px solid var(--gold-dim); padding:10px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace; font-size:11px; }
-.auth-bar button { font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 14px; border:1px solid var(--gold-dim); background:var(--surface); color:var(--gold); border-radius:3px; cursor:pointer; }
-.auth-bar button:hover { background:var(--gold-dim); color:var(--bg); }
-.auth-status { color:var(--text-dim); }
-.auth-status.ok { color:var(--green); }
 
 /* Toolbar */
 .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; align-items:center; }
@@ -131,20 +121,199 @@ body { background:var(--bg); color:var(--text); font-family:'Bitter',Georgia,ser
 /* Toast */
 .toast { position:fixed; bottom:20px; right:20px; background:var(--surface2); border:1px solid var(--gold-dim); border-radius:4px; padding:10px 16px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--gold); z-index:2000; opacity:0; transform:translateY(10px); transition:all 0.3s; }
 .toast.show { opacity:1; transform:translateY(0); }
+
+/* ── Global Header (matches index.html) ── */
+.tb-header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  width: 100%;
+  background: #0a0906;
+  border-bottom: 2px solid #7a6010;
+  overflow: hidden;
+}
+.tb-header-inner {
+  display: flex;
+  align-items: stretch;
+  height: 72px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+.tb-header-img {
+  width: 120px;
+  height: 72px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+.tb-header-img img {
+  width: 180px;
+  height: 120px;
+  object-fit: cover;
+  object-position: 30% 25%;
+  margin-top: -12px;
+  margin-left: -20px;
+  image-rendering: auto;
+}
+.tb-header-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 60%, #0a0906 100%);
+}
+.tb-header-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px 0 8px;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.tb-header-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.82rem;
+  color: #c9a227;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.8), 0 0 20px rgba(201,162,39,0.4);
+}
+.tb-header-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7a6e50;
+}
+.tb-sep {
+  width: 1px;
+  background: #3a3420;
+  margin: 14px 0;
+  flex-shrink: 0;
+}
+.tb-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 16px;
+  flex: 1;
+}
+.tb-nav a {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: #7a6e50;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+  line-height: 1;
+}
+.tb-nav a:hover {
+  color: #c9a227;
+  border-color: #7a6010;
+  background: rgba(201,162,39,0.06);
+}
+.tb-nav a.active {
+  color: #c9a227;
+  border-color: #7a6010;
+}
+.tb-nav a.soon {
+  opacity: 0.38;
+  cursor: default;
+  pointer-events: none;
+}
+.tb-header-right {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.tb-store-link {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: #4a4030;
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid #3a3420;
+  border-radius: 4px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.tb-store-link:hover {
+  color: #d4c9a0;
+  border-color: #7a6e50;
+}
+.tb-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Auth bar (below header) */
+.auth-bar {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--gold-dim);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+.auth-bar button { font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 14px; border:1px solid var(--gold-dim); background:var(--surface); color:var(--gold); border-radius:3px; cursor:pointer; }
+.auth-bar button:hover { background:var(--gold-dim); color:var(--bg); }
+.auth-status { color:var(--text-dim); }
+.auth-status.ok { color:var(--green); }
+
+@media (max-width: 600px) {
+  .tb-nav { display: none; }
+  .tb-header-title { font-size: 0.65rem; }
+  .tb-store-link { display: none; }
+}
 </style>
 </head>
 <body>
+<header class="tb-header">
+  <div class="tb-header-inner">
+    <div class="tb-header-img">
+      <img src="assets/img/header.jpeg" alt="Trubbish Bin Logo">
+    </div>
+    <div class="tb-header-brand">
+      <div class="tb-header-title">TRUBBISH BIN</div>
+      <div class="tb-header-sub">SuperLuckyKat</div>
+    </div>
+    <div class="tb-sep"></div>
+    <nav class="tb-nav">
+      <a href="index.html">HUB</a>
+      <a href="op-leader-tracker.html">LEADER TRACKER</a>
+      <a href="op-carddass-tracker.html">CARDDASS TRACKER</a>
+      <a href="op-carddass-research.html" class="active">RESEARCH</a>
+      <a href="flip-analyzer.html">FLIP ANALYZER</a>
+    </nav>
+    <div class="tb-header-right">
+      <a href="https://ebay.com/usr/superluckykat" target="_blank" class="tb-store-link">★ eBay STORE</a>
+    </div>
+  </div>
+</header>
+
 <!-- Auth Bar -->
 <div class="auth-bar" id="auth-bar">
   <button id="auth-btn" onclick="handleAuth()">Sign in with Google</button>
   <span class="auth-status" id="auth-status">Sign in to sync data with Google Drive</span>
-</div>
-
-<!-- Header -->
-<div class="header">
-  <a href="index.html" class="nav-back">← HUB</a>
-  <h1>OP CARDDASS RESEARCH</h1>
-  <span class="subtitle" id="record-count">— records</span>
 </div>
 
 <!-- Tabs -->
@@ -229,9 +398,10 @@ function signOut() {
   driveFileId = null;
   localStorage.removeItem('carddass_token');
   localStorage.removeItem('carddass_token_exp');
-  document.getElementById('auth-btn').textContent = 'Sign in with Google';
-  document.getElementById('auth-status').textContent = 'Signed out';
-  document.getElementById('auth-status').className = 'auth-status';
+  const btn = document.getElementById('auth-btn');
+  const status = document.getElementById('auth-status');
+  if (btn) btn.textContent = 'Sign in with Google';
+  if (status) { status.textContent = 'Signed out'; status.className = 'auth-status'; }
 }
 
 function checkAuthRedirect() {
@@ -257,18 +427,17 @@ function checkAuthRedirect() {
 }
 
 async function onSignedIn() {
-  document.getElementById('auth-btn').textContent = 'Sign Out';
-  document.getElementById('auth-status').textContent = 'Loading from Drive...';
-  document.getElementById('auth-status').className = 'auth-status';
+  const btn = document.getElementById('auth-btn');
+  const status = document.getElementById('auth-status');
+  if (btn) btn.textContent = 'Sign Out';
+  if (status) { status.textContent = 'Loading from Drive...'; status.className = 'auth-status'; }
   try {
     await ensureFolder();
     await loadFromDrive();
-    document.getElementById('auth-status').textContent = `Synced · ${DRIVE_FILE}`;
-    document.getElementById('auth-status').className = 'auth-status ok';
+    if (status) { status.textContent = `Synced · ${DRIVE_FILE}`; status.className = 'auth-status ok'; }
   } catch (e) {
     console.error('Drive load failed:', e);
-    document.getElementById('auth-status').textContent = 'Drive error — using local data';
-    document.getElementById('auth-status').className = 'auth-status';
+    if (status) { status.textContent = 'Drive error — using local data'; status.className = 'auth-status'; }
     loadLocal();
   }
 }
@@ -962,7 +1131,7 @@ function renderDashboard() {
 }
 
 // ========== INIT ==========
-checkAuthRedirect();
+document.addEventListener('DOMContentLoaded', () => checkAuthRedirect());
 </script>
 </body>
 </html>
