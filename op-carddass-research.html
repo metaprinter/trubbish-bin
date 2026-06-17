@@ -314,6 +314,7 @@ body { background:var(--bg); color:var(--text); font-family:'Bitter',Georgia,ser
 <div class="auth-bar" id="auth-bar">
   <button id="auth-btn" onclick="handleAuth()">Sign in with Google</button>
   <span class="auth-status" id="auth-status">Sign in to sync data with Google Drive</span>
+  <span id="record-count" style="margin-left:auto;color:var(--text-dim);font-size:10px;"></span>
 </div>
 
 <!-- Tabs -->
@@ -527,7 +528,8 @@ function persist() {
 }
 
 function onDataLoaded() {
-  document.getElementById('record-count').textContent = `${DATA.length} eBay Sold Comps`;
+  const rc = document.getElementById('record-count');
+  if (rc) rc.textContent = `${DATA.length} records`;
   renderDashboard();
   renderDataGrid();
 }
