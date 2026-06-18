@@ -570,8 +570,19 @@ function renderDataGrid() {
   // Sort
   filtered.sort((a, b) => {
     let va = a[sortCol], vb = b[sortCol];
-    if (sortCol === 'price') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; }
-    else { va = (va || '').toString().toLowerCase(); vb = (vb || '').toString().toLowerCase(); }
+    if (sortCol === 'price') {
+      va = parseFloat(va) || 0; vb = parseFloat(vb) || 0;
+    } else if (sortCol === 'soldDate' || sortCol === 'week') {
+      // Parse to timestamp so chronological sort works on free-text dates like "May 8, 2026"
+      const pa = va ? new Date(va).getTime() : 0;
+      const pb = vb ? new Date(vb).getTime() : 0;
+      // Treat unparseable/blank as 0 (sorts to end on desc)
+      const ta = isNaN(pa) ? 0 : pa;
+      const tb = isNaN(pb) ? 0 : pb;
+      return (ta - tb) * sortDir;
+    } else {
+      va = (va || '').toString().toLowerCase(); vb = (vb || '').toString().toLowerCase();
+    }
     return va < vb ? -sortDir : va > vb ? sortDir : 0;
   });
 
@@ -820,7 +831,9 @@ function importTSV(e, mode) {
         if (field === 'price') { v = parseFloat(v.replace(/[$,]/g, '')) || 0; }
         rec[field] = v;
       });
+      // Require a valid sold date — blocks active listings and blank-date artifacts
       if (rec.title || rec.price) {
+        if (!rec.soldDate || isNaN(new Date(rec.soldDate).getTime())) continue;
         const parsed = parseGradedTitle(rec.title, rec.soldDate);
         if (!rec.grader)     rec.grader     = parsed.grader;
         if (!rec.grade)      rec.grade      = parsed.grade;
