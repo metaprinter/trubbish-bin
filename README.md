@@ -37,3 +37,8 @@ Card images hosted at `assets/cards/`. Fallback: `assets/cards/CarddassHB.jpeg`.
 ## Stack
 
 Static HTML/CSS/JS. No build step. GitHub Pages only.
+
+---
+
+## License
+MIT — see [LICENSE](LICENSE). Covers original code/UI only. Card images, character art, and trademarks (One Piece, Carddass, Bandai, Toei, etc.) are property of their respective owners and are not covered by this license.
