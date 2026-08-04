@@ -369,62 +369,63 @@ body { background:var(--bg); color:var(--text); font-family:'Bitter',Georgia,ser
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script src="drive-auth.js"></script>
 <script>
 // ========== CONFIG ==========
 const CLIENT_ID = '406228714733-s5jaq0bp4nl7uujdc35j51l8nj0cgagt.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-const DRIVE_FOLDER = 'SuperLuckyKat';
+const FOLDER_ID = '1Mf5sWIjDszg5UMgikmExaVWeeufCFVWB'; // SuperLuckyKat folder (same as other trackers)
 const DRIVE_FILE = 'carddass-research.json';
 const PAGE_SIZE = 50;
 
 let DATA = [];
-let accessToken = null;
-let driveFileId = null;
 let sortCol = 'week';
 let sortDir = -1;
 let dataPage = 0;
 let editIdx = -1;
 let saveTimeout = null;
 
-// ========== GOOGLE OAUTH ==========
+// ========== GOOGLE DRIVE SYNC (shared module — drive-auth.js) ==========
+const sync = createDriveSync({
+  clientId: CLIENT_ID,
+  folderId: FOLDER_ID,
+  fileName: DRIVE_FILE,
+  rememberKey: 'slk_drive_signed_in',
+  onSessionExpired: (retry) => {
+    const status = document.getElementById('auth-status');
+    if (status) { status.textContent = 'Session expired — sign in again'; status.className = 'auth-status'; }
+    const btn = document.getElementById('auth-btn');
+    if (btn) btn.textContent = 'Sign in with Google';
+  },
+});
+
+function initAuth() {
+  // Clean up tokens persisted by the old implicit-flow version of this page
+  localStorage.removeItem('carddass_token');
+  localStorage.removeItem('carddass_token_exp');
+
+  sync.init().then(silentOk => {
+    if (silentOk) onSignedIn();
+    else loadLocal();
+  });
+}
+
 function handleAuth() {
-  if (accessToken) { signOut(); return; }
-  const redirectUri = window.location.origin + window.location.pathname;
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(SCOPES)}`;
-  window.location.href = authUrl;
+  if (sync.isSignedIn()) { signOut(); return; }
+  sync.signIn().then(onSignedIn).catch(e => {
+    console.warn('Sign-in failed:', e.message);
+    toast('Sign-in failed');
+    loadLocal();
+  });
 }
 
 function signOut() {
-  accessToken = null;
-  driveFileId = null;
-  localStorage.removeItem('carddass_token');
-  localStorage.removeItem('carddass_token_exp');
+  sync.signOut();
   const btn = document.getElementById('auth-btn');
   const status = document.getElementById('auth-status');
   if (btn) btn.textContent = 'Sign in with Google';
   if (status) { status.textContent = 'Signed out'; status.className = 'auth-status'; }
-}
-
-function checkAuthRedirect() {
-  const hash = window.location.hash;
-  if (hash.includes('access_token')) {
-    const params = new URLSearchParams(hash.slice(1));
-    accessToken = params.get('access_token');
-    const expiresIn = parseInt(params.get('expires_in') || '3600');
-    localStorage.setItem('carddass_token', accessToken);
-    localStorage.setItem('carddass_token_exp', Date.now() + expiresIn * 1000);
-    window.history.replaceState(null, '', window.location.pathname);
-    onSignedIn();
-  } else {
-    const stored = localStorage.getItem('carddass_token');
-    const exp = parseInt(localStorage.getItem('carddass_token_exp') || '0');
-    if (stored && Date.now() < exp) {
-      accessToken = stored;
-      onSignedIn();
-    } else {
-      loadLocal();
-    }
-  }
 }
 
 async function onSignedIn() {
@@ -433,7 +434,6 @@ async function onSignedIn() {
   if (btn) btn.textContent = 'Sign Out';
   if (status) { status.textContent = 'Loading from Drive...'; status.className = 'auth-status'; }
   try {
-    await ensureFolder();
     await loadFromDrive();
     if (status) { status.textContent = `Synced · ${DRIVE_FILE}`; status.className = 'auth-status ok'; }
   } catch (e) {
@@ -443,66 +443,15 @@ async function onSignedIn() {
   }
 }
 
-async function driveRequest(url, opts = {}) {
-  const r = await fetch(url, { ...opts, headers: { Authorization: `Bearer ${accessToken}`, ...(opts.headers || {}) } });
-  if (r.status === 401) { signOut(); throw new Error('Token expired'); }
-  return r;
-}
-
-let folderId = null;
-async function ensureFolder() {
-  // Find or create SuperLuckyKat folder
-  const q = encodeURIComponent(`name='${DRIVE_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const r = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`);
-  const data = await r.json();
-  if (data.files && data.files.length > 0) {
-    folderId = data.files[0].id;
-  } else {
-    const cr = await driveRequest('https://www.googleapis.com/drive/v3/files', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: DRIVE_FOLDER, mimeType: 'application/vnd.google-apps.folder' })
-    });
-    const cf = await cr.json();
-    folderId = cf.id;
-  }
-}
-
 async function loadFromDrive() {
-  const q = encodeURIComponent(`name='${DRIVE_FILE}' and '${folderId}' in parents and trashed=false`);
-  const r = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`);
-  const data = await r.json();
-  if (data.files && data.files.length > 0) {
-    driveFileId = data.files[0].id;
-    const fr = await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`);
-    DATA = await fr.json();
-  } else {
-    // First time — no data yet, user will APPEND TSV
-    DATA = [];
-  }
+  const loaded = await sync.load();
+  DATA = loaded || [];
   onDataLoaded();
 }
 
 async function saveToDrive() {
-  if (!accessToken || !folderId) return;
-  const body = JSON.stringify(DATA);
-  if (driveFileId) {
-    await driveRequest(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body
-    });
-  } else {
-    const metadata = { name: DRIVE_FILE, parents: [folderId], mimeType: 'application/json' };
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', new Blob([body], { type: 'application/json' }));
-    const r = await driveRequest('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST', body: form
-    });
-    const f = await r.json();
-    driveFileId = f.id;
-  }
+  if (!sync.isSignedIn()) return;
+  await sync.save(DATA);
 }
 
 function debounceSave() {
@@ -524,7 +473,7 @@ function saveLocal() {
 
 function persist() {
   saveLocal();
-  if (accessToken) debounceSave();
+  if (sync.isSignedIn()) debounceSave();
 }
 
 function onDataLoaded() {
@@ -1146,7 +1095,7 @@ function renderDashboard() {
 }
 
 // ========== INIT ==========
-document.addEventListener('DOMContentLoaded', () => checkAuthRedirect());
+document.addEventListener('DOMContentLoaded', initAuth);
 </script>
 </body>
 </html>

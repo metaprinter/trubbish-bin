@@ -1,33 +1,39 @@
 /* OP Carddass Tracker — Trubbish Bin
-   tracker.js — app logic (requires sets-data.js loaded first) */
+   tracker.js — app logic (requires sets-data.js + drive-auth.js loaded first) */
 
-const CLIENT_ID='406228714733-s5jaq0bp4nl7uujdc35j51l8nj0cgagt.apps.googleusercontent.com';
-const SCOPES='https://www.googleapis.com/auth/drive.file';
-const FOLDER_ID='1Mf5sWIjDszg5UMgikmExaVWeeufCFVWB';
-const FILE_NAME='op-carddass-tracker.json';
 const IMG_BASE='assets/cards/';
 const FALLBACK_IMG='assets/cards/CarddassHB.jpeg';
 
-let tokenClient,accessToken,driveFileId,data={},saveTimer;
+let data={},saveTimer;
 let activeTab='all',searchTerm='',rarityFilter='';
-let tokenTimestamp=0,refreshInterval=null;
 
-// ── Google Auth ──
+// ── Google Drive sync (shared module) ──
+
+const sync=createDriveSync({
+  clientId:'406228714733-s5jaq0bp4nl7uujdc35j51l8nj0cgagt.apps.googleusercontent.com',
+  folderId:'1Mf5sWIjDszg5UMgikmExaVWeeufCFVWB',
+  fileName:'op-carddass-tracker.json',
+  rememberKey:'slk_drive_signed_in',
+  onSessionExpired:showSessionExpired,
+});
+
+// ── Auth ──
 
 function initAuth(){
-  tokenClient=google.accounts.oauth2.initTokenClient({
-    client_id:CLIENT_ID,
-    scope:SCOPES,
-    callback:handleToken,
+  document.getElementById('signInBtn').onclick=async()=>{
+    try{
+      await sync.signIn();
+      onSignedIn();
+    }catch(e){
+      showAuthError(e.message);
+    }
+  };
+  sync.init().then(silentOk=>{
+    if(silentOk)onSignedIn();
   });
-  document.getElementById('signInBtn').onclick=()=>tokenClient.requestAccessToken();
 }
 
-function handleToken(resp){
-  if(resp.error)return showAuthError(resp.error);
-  accessToken=resp.access_token;
-  tokenTimestamp=Date.now();
-  startTokenRefreshTimer();
+function onSignedIn(){
   document.getElementById('authScreen').style.display='none';
   document.getElementById('app').style.display='block';
   loadFromDrive();
@@ -39,78 +45,7 @@ function showAuthError(msg){
   el.style.display='block';
 }
 
-// ── Token Refresh ──
-
-const TOKEN_LIFETIME=3600*1000;
-const REFRESH_BEFORE=600*1000;
-
-function isTokenStale(){
-  return Date.now()-tokenTimestamp>TOKEN_LIFETIME-REFRESH_BEFORE;
-}
-
-function silentRefresh(){
-  return new Promise((resolve)=>{
-    const prevCallback=tokenClient.callback;
-    tokenClient.callback=(resp)=>{
-      tokenClient.callback=prevCallback;
-      if(resp.error){
-        console.warn('Silent refresh failed:',resp.error);
-        resolve(false);
-      }else{
-        accessToken=resp.access_token;
-        tokenTimestamp=Date.now();
-        console.log('Token refreshed silently');
-        resolve(true);
-      }
-    };
-    try{
-      tokenClient.requestAccessToken({prompt:''});
-    }catch(e){
-      console.warn('Silent refresh exception:',e);
-      tokenClient.callback=prevCallback;
-      resolve(false);
-    }
-  });
-}
-
-async function ensureFreshToken(){
-  if(isTokenStale()){
-    const ok=await silentRefresh();
-    if(!ok)console.warn('Token may be stale — next Drive call might fail');
-  }
-}
-
-function startTokenRefreshTimer(){
-  if(refreshInterval)clearInterval(refreshInterval);
-  refreshInterval=setInterval(async()=>{
-    if(isTokenStale()){
-      await silentRefresh();
-    }
-  },5*60*1000);
-}
-
-// ── Drive Sync ──
-
-async function driveRequest(url,opts={}){
-  await ensureFreshToken();
-  const makeHeaders=()=>({...opts.headers,'Authorization':'Bearer '+accessToken});
-  let r=await fetch(url,{...opts,headers:makeHeaders()});
-  if(r.status===401||r.status===403){
-    console.warn('Drive auth failed ('+r.status+'), attempting refresh…');
-    const ok=await silentRefresh();
-    if(ok){
-      r=await fetch(url,{...opts,headers:makeHeaders()});
-    }
-    if(!r.ok&&(r.status===401||r.status===403)){
-      showSessionExpired();
-      throw new Error('Drive auth '+r.status+' — session expired');
-    }
-  }
-  if(!r.ok)throw new Error('Drive '+r.status);
-  return r;
-}
-
-function showSessionExpired(){
+function showSessionExpired(retry){
   setSyncState('error');
   const label=document.getElementById('syncLabel');
   label.textContent='Session expired — click to reconnect';
@@ -118,24 +53,18 @@ function showSessionExpired(){
   label.onclick=()=>{
     label.style.cursor='';
     label.onclick=null;
-    tokenClient.requestAccessToken();
+    retry();
   };
 }
 
-async function findFile(){
-  const q=encodeURIComponent(`name='${FILE_NAME}' and '${FOLDER_ID}' in parents and trashed=false`);
-  const r=await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${q}&spaces=drive&fields=files(id)`);
-  const d=await r.json();
-  return d.files&&d.files[0]?d.files[0].id:null;
-}
+// ── Drive Sync ──
 
 async function loadFromDrive(){
   setSyncState('syncing');
   try{
-    driveFileId=await findFile();
-    if(driveFileId){
-      const r=await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`);
-      data=await r.json();
+    const loaded=await sync.load();
+    if(loaded){
+      data=loaded;
     }else{
       const cached=localStorage.getItem('op-carddass-data');
       if(cached)data=JSON.parse(cached);
@@ -154,21 +83,7 @@ async function saveToDrive(){
   setSyncState('syncing');
   localStorage.setItem('op-carddass-data',JSON.stringify(data));
   try{
-    if(!driveFileId){
-      const meta={name:FILE_NAME,parents:[FOLDER_ID],mimeType:'application/json'};
-      const form=new FormData();
-      form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
-      form.append('file',new Blob([JSON.stringify(data)],{type:'application/json'}));
-      const r=await driveRequest('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',body:form});
-      const d=await r.json();
-      driveFileId=d.id;
-    }else{
-      await driveRequest(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(data),
-      });
-    }
+    await sync.save(data);
     setSyncState('saved');
   }catch(e){
     console.error('Save error:',e);
@@ -554,7 +469,7 @@ document.getElementById('importFile').onchange=(e)=>{
 };
 
 document.getElementById('signOutBtn').onclick=()=>{
-  google.accounts.oauth2.revoke(accessToken);
+  sync.signOut();
   location.reload();
 };
 

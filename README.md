@@ -16,6 +16,7 @@ Personal tooling for One Piece TCG and Carddass collecting/reselling.
 | `op-carddass-research.html` | Carddass sold comp research dashboard |
 | `flip-analyzer.html` | eBay sold comps analyzer — parses bookmarklet TSV exports |
 | `op-carddass-purchases.html` | Purchase history log |
+| `drive-auth.js` | Shared Google Drive auth/sync module (GIS token client) used by all trackers |
 
 ---
 

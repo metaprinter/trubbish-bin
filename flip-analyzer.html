@@ -641,6 +641,13 @@ function processAndGroupTSV(rows) {
     
     if (isNaN(rawPrice) || !rawDate || isNaN(rawDate.getTime())) return;
 
+    // eBay sold dates sometimes omit the year; JS parses those as the current
+    // year, which can land in the future (e.g. "Dec 28" pasted in August).
+    // A sold date can't be in the future, so roll it back one year.
+    if (rawDate.getTime() > Date.now() + 86400000) {
+      rawDate.setFullYear(rawDate.getFullYear() - 1);
+    }
+
     if (!map[tokenKey]) {
       map[tokenKey] = {
         displayName: tokenKey, // Use clean structural code output directly on the list UI
@@ -663,9 +670,12 @@ function processAndGroupTSV(rows) {
 function runTimeBoxAnalysis(comps, buy, grade, ship) {
   comps.sort((a, b) => b.date - a.date);
   
-  // Set explicit date anchor to align 2026 data arrays correctly
-  const refDate = new Date("2026-06-08T18:00:00"); 
   const msInDay = 86400000;
+  // Anchor the analysis to the newest sale in the pasted dump (clamped to now).
+  // This keeps the 3d/21d velocity windows aligned to the data snapshot itself,
+  // so both fresh dumps and older saved dumps analyze correctly.
+  const newestSale = comps.length ? comps[0].date.getTime() : Date.now();
+  const refDate = new Date(Math.min(newestSale, Date.now()));
 
   const vol3dComps = comps.filter(c => (refDate - c.date) <= (3 * msInDay));
   const baseComps = comps.filter(c => {

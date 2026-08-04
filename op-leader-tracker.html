@@ -175,6 +175,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async></script>
+<script src="drive-auth.js"></script>
 <script>
 // ── CONFIG ── Replace CLIENT_ID with your OAuth 2.0 Client ID from Google Cloud Console
 const CLIENT_ID = '406228714733-s5jaq0bp4nl7uujdc35j51l8nj0cgagt.apps.googleusercontent.com';
@@ -386,7 +387,7 @@ const SETS=[STARTERS,...OP_SETS];
 // ── STATE ──
 let data={}, curTab='all', curSearch='', sortMissing=false;
 let stExcluded=localStorage.getItem('slk-st-excluded')!=='false'; // default excluded
-let driveFileId=null, saveTimer=null, tokenClient=null, accessToken=null;
+let saveTimer=null;
 
 // ── SYNC UI ──
 function setSyncState(state,label){
@@ -396,141 +397,59 @@ function setSyncState(state,label){
   lbl.textContent=label||'';
 }
 
-// ── DRIVE REST API (pure fetch, no gapi.client) ──
-const DRIVE='https://www.googleapis.com/drive/v3';
-const UPLOAD='https://www.googleapis.com/upload/drive/v3';
+// ── DRIVE SYNC (shared module — drive-auth.js) ──
+const sync=createDriveSync({
+  clientId:CLIENT_ID,
+  folderId:FOLDER_ID,
+  fileName:FILE_NAME,
+  rememberKey:'slk_drive_signed_in',
+  onSessionExpired:onSessionExpired,
+});
 
-function authHeaders(){
-  return {Authorization:'Bearer '+accessToken,'Content-Type':'application/json'};
-}
-
-async function driveGet(path,params={}){
-  const url=new URL(DRIVE+path);
-  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
-  const r=await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
-  if(!r.ok)throw new Error('Drive GET '+path+' failed: '+r.status);
-  return r;
-}
-
-async function findOrCreateFile(){
-  const r=await driveGet('/files',{
-    q:`name='${FILE_NAME}' and '${FOLDER_ID}' in parents and trashed=false`,
-    fields:'files(id,name,modifiedTime)',
-    orderBy:'modifiedTime desc',
-    spaces:'drive'
-  });
-  const json=await r.json();
-  const files=json.files||[];
-  if(files.length>0){
-    driveFileId=files[0].id;
-    // Delete any dupes
-    for(let i=1;i<files.length;i++){
-      try{await fetch(DRIVE+'/files/'+files[i].id,{method:'DELETE',headers:{Authorization:'Bearer '+accessToken}});}catch(e){}
-    }
-    return driveFileId;
-  }
-  // Create new file with empty JSON content
-  const boundary='slk_boundary_'+Date.now();
-  const meta=JSON.stringify({name:FILE_NAME,parents:[FOLDER_ID]});
-  const body=`--${boundary}
-Content-Type: application/json; charset=UTF-8
-
-${meta}
---${boundary}
-Content-Type: application/json
-
-{}
---${boundary}--`;
-  const cr=await fetch(UPLOAD+'/files?uploadType=multipart',{
-    method:'POST',
-    headers:{Authorization:'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},
-    body
-  });
-  if(!cr.ok)throw new Error('Create file failed: '+cr.status);
-  const created=await cr.json();
-  driveFileId=created.id;
-  return driveFileId;
+function onSessionExpired(retry){
+  setSyncState('error','Session expired');
+  const lbl=document.getElementById('syncLabel');
+  lbl.style.cursor='pointer';
+  lbl.title='Click to re-authenticate';
+  lbl.onclick=()=>{
+    lbl.style.cursor='';
+    lbl.title='';
+    lbl.onclick=null;
+    retry();
+  };
 }
 
 async function loadFromDrive(){
   setSyncState('syncing','Loading…');
   try{
-    await ensureFreshToken();
-    await findOrCreateFile();
-    // Fetch file content as text directly
-    let r=await fetch(DRIVE+'/files/'+driveFileId+'?alt=media',{
-      headers:{Authorization:'Bearer '+accessToken}
-    });
-    // Retry once on auth failure
-    if(r.status===401||r.status===403){
-      try{await refreshToken();}catch(e){}
-      r=await fetch(DRIVE+'/files/'+driveFileId+'?alt=media',{
-        headers:{Authorization:'Bearer '+accessToken}
-      });
-    }
-    if(!r.ok)throw new Error('Read failed: '+r.status);
-    const text=(await r.text()).trim();
-    if(text&&text!=='{}'){
-      let parsed;
-      try{
-        parsed=JSON.parse(text);
-      }catch(e){
-        // File may be base64-encoded from a previous broken upload — decode it
-        try{
-          parsed=JSON.parse(atob(text));
-          // Immediately re-save as clean JSON so this only triggers once
-          data=parsed;
-          await saveToDrive();
-        }catch(e2){
-          console.error('Could not parse file content:',e2);
-          parsed={};
-        }
-      }
-      data=parsed||{};
-    }else{
-      data={};
-    }
+    const loaded=await sync.load();
+    data=loaded||{};
     setSyncState('saved','Synced');
-    render();
-    showApp();
   }catch(e){
     console.error('Drive load error',e);
     setSyncState('error','Load failed: '+e.message);
     data={};
-    render();
-    showApp();
   }
+  render();
+  showApp();
 }
 
 async function saveToDrive(){
-  if(!driveFileId)return;
   setSyncState('syncing','Saving…');
   try{
-    await ensureFreshToken();
-    const r=await fetch(UPLOAD+'/files/'+driveFileId+'?uploadType=media',{
-      method:'PATCH',
-      headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-      body:JSON.stringify(data)
-    });
-    if(r.status===401||r.status===403){
-      // Token truly expired and silent refresh didn't work — prompt user
-      setSyncState('error','Session expired');
-      document.getElementById('syncLabel').style.cursor='pointer';
-      document.getElementById('syncLabel').title='Click to re-authenticate';
-      document.getElementById('syncLabel').onclick=()=>tokenClient.requestAccessToken({prompt:''});
-      return;
-    }
-    if(!r.ok)throw new Error('Save failed: '+r.status);
-    document.getElementById('syncLabel').style.cursor='';
-    document.getElementById('syncLabel').onclick=null;
+    await sync.save(data);
+    const lbl=document.getElementById('syncLabel');
+    lbl.style.cursor='';
+    lbl.onclick=null;
     setSyncState('saved','Saved ✓');
     setTimeout(()=>setSyncState('saved','Synced'),1500);
   }catch(e){
     console.error('Drive save error',e);
     setSyncState('error','Save failed — click to retry');
-    document.getElementById('syncLabel').style.cursor='pointer';
-    document.getElementById('syncLabel').onclick=()=>{
-      document.getElementById('syncLabel').onclick=null;
+    const lbl=document.getElementById('syncLabel');
+    lbl.style.cursor='pointer';
+    lbl.onclick=()=>{
+      lbl.onclick=null;
       saveToDrive();
     };
   }
@@ -542,71 +461,20 @@ function scheduleSave(){
 }
 
 // ── AUTH ──
-let tokenExpiry=0; // unix ms when token expires
 
-function refreshToken(){
-  return new Promise((resolve,reject)=>{
-    tokenClient.callback=async(resp)=>{
-      if(resp.error){reject(new Error(resp.error));return;}
-      accessToken=resp.access_token;
-      tokenExpiry=Date.now()+(resp.expires_in||3500)*1000;
-      resolve();
-    };
-    tokenClient.requestAccessToken({prompt:''});
-  });
-}
-
-async function ensureFreshToken(){
-  // Refresh if token expires in less than 10 minutes
-  if(!accessToken||Date.now()>tokenExpiry-600000){
-    try{await refreshToken();}
-    catch(e){
-      console.warn('Token refresh failed:',e);
-    }
-  }
-}
-
-let refreshInterval=null;
-function startTokenRefreshTimer(){
-  if(refreshInterval)clearInterval(refreshInterval);
-  refreshInterval=setInterval(async()=>{
-    if(!accessToken||Date.now()>tokenExpiry-600000){
-      try{await refreshToken();console.log('Token refreshed proactively');}
-      catch(e){console.warn('Proactive refresh failed:',e);}
-    }
-  },5*60*1000); // check every 5 min
-}
-
-function initAuth(){
-  tokenClient=google.accounts.oauth2.initTokenClient({
-    client_id:CLIENT_ID,
-    scope:SCOPES,
-    callback:async(resp)=>{
-      if(resp.error){
-        document.getElementById('authError').textContent='Sign in failed: '+resp.error;
-        document.getElementById('authError').style.display='block';
-        return;
-      }
-      accessToken=resp.access_token;
-      tokenExpiry=Date.now()+(resp.expires_in||3500)*1000;
-      startTokenRefreshTimer();
-      await loadFromDrive();
-    }
-  });
-}
-
-document.getElementById('signInBtn').addEventListener('click',()=>{
-  if(!tokenClient){
-    document.getElementById('authError').textContent='Google API not loaded yet. Please wait a moment and try again.';
+document.getElementById('signInBtn').addEventListener('click',async()=>{
+  try{
+    await sync.signIn('select_account');
+    await loadFromDrive();
+  }catch(e){
+    document.getElementById('authError').textContent='Sign in failed: '+e.message;
     document.getElementById('authError').style.display='block';
-    return;
   }
-  tokenClient.requestAccessToken({prompt:'select_account'});
 });
 
 document.getElementById('signOutBtn').addEventListener('click',()=>{
-  if(accessToken){google.accounts.oauth2.revoke(accessToken,()=>{});}
-  accessToken=null;driveFileId=null;data={};
+  sync.signOut();
+  data={};
   document.getElementById('app').style.display='none';
   document.getElementById('authScreen').style.display='flex';
 });
@@ -616,13 +484,10 @@ function showApp(){
   document.getElementById('app').style.display='block';
 }
 
-// Wait for Google Identity Services to load (no gapi needed)
 window.addEventListener('load',()=>{
-  const waitGsi=()=>new Promise(resolve=>{
-    if(window.google&&google.accounts)return resolve();
-    const t=setInterval(()=>{if(window.google&&google.accounts){clearInterval(t);resolve();}},100);
+  sync.init().then(silentOk=>{
+    if(silentOk)loadFromDrive();
   });
-  waitGsi().then(initAuth);
 });
 
 // ── CARD LOGIC ──
